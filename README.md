@@ -35,3 +35,116 @@ Este es el carrito de compras donde un cliente podrá realizar compras de los pr
 ![image-20220117182321332](https://user-images.githubusercontent.com/59342976/149868295-6b49499a-0523-4a40-8cca-833fd80c6325.png)
 
 ## Base de datos
+
+```sql
+USE master
+
+IF EXISTS (
+		SELECT *
+		FROM sysdatabases
+		WHERE (name = 'DBCARRITO')
+		)
+BEGIN
+	DROP DATABASE DBCARRITO
+END
+
+CREATE DATABASE DBCARRITO
+
+GO
+USE DBCARRITO
+
+CREATE TABLE CATEGORIA (
+	IdCategoria INT PRIMARY KEY identity,
+	Descripcion VARCHAR(100),
+	Activo INT DEFAULT 1,
+	FechaRegistro DATETIME DEFAULT getdate()
+	)
+
+CREATE TABLE MARCA (
+	IdMarca INT PRIMARY KEY identity,
+	Descripcion VARCHAR(100),
+	Activo BIT DEFAULT 1,
+	FechaRegistro DATETIME DEFAULT getdate()
+	)
+
+CREATE TABLE PRODUCTO (
+	IdProducto INT PRIMARY KEY identity,
+	Nombre VARCHAR(500),
+	Descripcion VARCHAR(500),
+	IdMarca INT REFERENCES Marca(IdMarca),
+	IdCategoria INT REFERENCES Categoria(IdCategoria),
+	Precio DECIMAL(10, 2) DEFAULT 0,
+	Stock INT,
+	RutaImagen VARCHAR(100),
+	NombreImagen VARCHAR(100),
+	Activo BIT DEFAULT 1,
+	FechaRegistro DATETIME DEFAULT getdate()
+	)
+
+CREATE TABLE CLIENTE (
+	IdCliente INT PRIMARY KEY identity,
+	Nombres VARCHAR(100),
+	Apellidos VARCHAR(100),
+	Clave VARCHAR(150),
+	Reestablecer BIT DEFAULT 0,
+	FechaRegistro DATETIME DEFAULT getdate()
+	)
+
+CREATE TABLE CARRITO (
+	IdCarrito INT PRIMARY KEY identity,
+	IdCliente INT REFERENCES CLIENTE(IdCliente),
+	IdProducto INT REFERENCES PRODUCTO(IdProducto),
+	Cantidad INT
+	)
+
+CREATE TABLE VENTA (
+	IdVenta INT PRIMARY KEY identity,
+	IdCliente INT REFERENCES CLIENTE(idCliente),
+	TotalProducto INT,
+	MontoTotal DECIMAL(10, 2),
+	Contacto VARCHAR(50),
+	IdDistrito VARCHAR(10),
+	Telefono VARCHAR(50),
+	Direccion VARCHAR(500),
+	IdTransaccion VARCHAR(50),
+	FechaVenta DATETIME DEFAULT getdate()
+	)
+
+CREATE TABLE DETALLE_VENTA (
+	IdDetalleVenta INT PRIMARY KEY identity,
+	IdVenta INT REFERENCES VENTA(IdVenta),
+	IdProducto INT REFERENCES PRODUCTO(IdProducto),
+	Cantidad INT,
+	Total DECIMAL(10, 2)
+	)
+
+CREATE TABLE USUARIO (
+	IdUsuario INT PRIMARY KEY identity,
+	Nombres VARCHAR(100),
+	Apellidos VARCHAR(100),
+	Correo VARCHAR(100),
+	Clave VARCHAR(100),
+	Reestablecer BIT DEFAULT 1,
+	Activo BIT DEFAULT 1,
+	FechaRegistro DATETIME DEFAULT getdate()
+	)
+
+CREATE TABLE DEPARTAMENTO (
+	IdDepartamento VARCHAR(2) NOT NULL,
+	Descripcion VARCHAR(45) NOT NULL
+	)
+
+CREATE TABLE PROVINCIA (
+	IdProvincia VARCHAR(4) NOT NULL,
+	Descripcion VARCHAR(45) NOT NULL,
+	IdDepartamento VARCHAR(2) NOT NULL
+	)
+
+CREATE TABLE DISTRITO (
+	IdDistrito VARCHAR(6) NOT NULL,
+	Descripcion VARCHAR(45) NOT NULL,
+	IdProvincia VARCHAR(4) NOT NULL,
+	IdDepartamento VARCHAR(2) NOT NULL
+	)
+```
+![image](https://user-images.githubusercontent.com/59342976/150464979-9a5e644e-ae2e-457a-bfbe-fe7c27790184.png)
