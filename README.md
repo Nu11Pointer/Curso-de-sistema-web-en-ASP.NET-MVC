@@ -1,257 +1,262 @@
-# Curso de sistema web en ASP.NET MVC + SQL Server - Parte 02
+# Curso de sistema web en ASP.NET MVC + SQL Server - Parte 03
 
-## Añadiendo Registros a la Base de Datos
+## ¿Qué son los bundles?
 
-```sql
-USE DBCARRITO
+Cuando creamos el proyecto en la plantilla **_Layaout.cshtml** una de las cosas que resaltan a la vista son los **Styles.Render y Script.Render** en lugar de incluir etiquetas **link** para css o **script** para javascript. El parámetro que se pasa por parámetro es el nombre del bundle a renderizar.
 
-INSERT INTO USUARIO (
-	Nombres,
-	Apellidos,
-	Correo,
-	Clave
-	)
-VALUES (
-	'test nombre',
-	'test apellido',
-	'test@example.com',
-	'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae'
-	)
+![image](https://user-images.githubusercontent.com/59342976/152063080-c28e228c-3a98-4dcb-be2b-e881e50bacdb.png)
 
-INSERT INTO CATEGORIA (Descripcion)
-VALUES ('Tecnologia'),
-	('Muebles'),
-	('Dormitorio'),
-	('Deportes')
-
-INSERT INTO MARCA (Descripcion)
-VALUES ('SONYTE'),
-	('HPTE'),
-	('LGTE'),
-	('HYUNDAITE'),
-	('CANONTE'),
-	('ROBERTA ALLENTE')
-
-INSERT INTO DEPARTAMENTO (
-	IdDepartamento,
-	Descripcion
-	)
-VALUES (
-	'01',
-	'Arequipa'
-	),
-	(
-	'02',
-	'Ica'
-	),
-	(
-	'03',
-	'Lima'
-	)
-
-INSERT INTO PROVINCIA (
-	IdProvincia,
-	Descripcion,
-	IdDepartamento
-	)
-VALUES (
-	'0101',
-	'Arequipa',
-	'01'
-	),
-	(
-	'0102',
-	'Camaná',
-	'01'
-	),
-	--ICA - PROVINCIAS
-	(
-	'0201',
-	'Ica ',
-	'02'
-	),
-	(
-	'0202',
-	'Chincha ',
-	'02'
-	),
-	--LIMA - PROVINCIAS
-	(
-	'0301',
-	'Lima ',
-	'03'
-	),
-	(
-	'0302',
-	'Barranca ',
-	'03'
-	)
-
-INSERT INTO DISTRITO (
-	IdDistrito,
-	Descripcion,
-	IdProvincia,
-	IdDepartamento
-	)
-VALUES (
-	'010101',
-	'Nieva',
-	'0101',
-	'01'
-	),
-	(
-	'010102',
-	'El Cenepa',
-	'0101',
-	'01'
-	),
-	(
-	'010201',
-	'Camaná',
-	'0102',
-	'01'
-	),
-	(
-	'010202',
-	'José María Quimper',
-	'0102',
-	'01'
-	),
-	--ICA - DISTRITO
-	(
-	'020101',
-	'Ica',
-	'0201',
-	'02'
-	),
-	(
-	'020102',
-	'La Tinguiña',
-	'0201',
-	'02'
-	),
-	(
-	'020201',
-	'Chincha Alta',
-	'0202',
-	'02'
-	),
-	(
-	'020202',
-	'Alto Laran',
-	'0202',
-	'02'
-	),
-	--LIMA - DISTRITO
-	(
-	'030101',
-	'Lima',
-	'0301',
-	'03'
-	),
-	(
-	'030102',
-	'Ancón',
-	'0301',
-	'03'
-	),
-	(
-	'030201',
-	'Barranca',
-	'0302',
-	'03'
-	),
-	(
-	'030202',
-	'Paramonga',
-	'0302',
-	'03'
-	)
-```
-
-## Creando Proyecto
-
-Utilizaremos la plantilla **Aplicación web ASP.NET (.NET Framework) de Visual Studio 2019**.
-
-![image](https://user-images.githubusercontent.com/59342976/150624287-69f133d6-90d0-4d9c-9e98-ce8f84e34f7b.png)
-
-Utilizaremos las siguientes configuraciónes para crear el proyecto.
-
-![image](https://user-images.githubusercontent.com/59342976/150624335-f25fb88c-ecb6-4bab-9258-2b2ed3713239.png)
-
-![image](https://user-images.githubusercontent.com/59342976/150624357-6045e57f-d378-4e2b-9098-0dbc376b4b80.png)
-
-Agregamos un nuevo proyecto
-
-![image](https://user-images.githubusercontent.com/59342976/150624478-c441ab4a-ca00-430f-bbda-56ea4db6ddff.png)
-
-![image](https://user-images.githubusercontent.com/59342976/150624503-4882abe5-232f-411d-b08e-e71289db8cd8.png)
-
-![image](https://user-images.githubusercontent.com/59342976/150624521-9d4c0ecd-d098-42e5-bcd5-3a6fa0f8f014.png)
-
-![image](https://user-images.githubusercontent.com/59342976/150624525-274781f0-7c5a-4e62-965f-65da73552773.png)
-
-Al proyecto CapaPresentacionAdmin lo estableceremos como proyecto de inicio.
-
-![image](https://user-images.githubusercontent.com/59342976/150624559-c3ddc2e6-bd83-4362-8ad1-b0f1b9ebda5e.png)
-
-Una vez ejecutamos el proyecto podemos observar la plantilla por defecto.
-
-![image](https://user-images.githubusercontent.com/59342976/150624829-b3c9a3f7-5867-45a3-94d5-66682f46d18f.png)
-
-Podemos observar diferentes carpetas en el proyecto pero hay dos muy interesantes que son **Controllers** y **Views**.
-
-![image](https://user-images.githubusercontent.com/59342976/150659939-a1ac03f3-7221-404b-8317-c0989c180b54.png)
-
-La carpeta **Controllers** tiene el controlador **HomeController.cs** podemos observar que este retorna las vistas **Index**, **About** y **Contact** dependiendo el método.
-
-![image](https://user-images.githubusercontent.com/59342976/150659950-db85200a-45c3-4afa-9647-3e45e775ad16.png)
-
-Estas vistas están almacenadas en la carpeta **Views** dentro de la sub-carpeta con el mismo nombre del controlador a la cual hacen referencia (en este caso **Home** de **HomeController**).
-
-![image](https://user-images.githubusercontent.com/59342976/150660023-bb417579-a069-4259-8c8f-32791b2792bf.png)
-
-El controlador **Home** es utilizado en el archivo **_Layaout.cshtml** dentro de la carpeta **Shared**. Podemos observar una estructura similar a HTML pero que permite utilizar código C#.
-
-![image](https://user-images.githubusercontent.com/59342976/150660188-83b279ef-8834-4d7d-a2ba-4041570d2939.png)
-
-Adentro de este archivo podemos observar **@Html.ActionLink()** el primer argumento hace referencia al texto que se mostrará por pantalla, el segundo es el nombre de la acción o método y por ultimo el controlador al que hace referencia. Es decir si queremos llamar a la vista **About** lo haremos de la siguiente así: `@Html.ActionLink("Acerca de", "About", "Home")`.
-
-![image](https://user-images.githubusercontent.com/59342976/150660252-213a69b7-2143-46be-9922-b93f54d1772b.png)
-
-Agreguemos una nueva sección en el **Layout**.
-
-`<li>@Html.ActionLink("Pagina de pruebas", "PaginaTest", "Home")</li>`
-
-![image](https://user-images.githubusercontent.com/59342976/150660372-c07af53b-0350-4db7-8fdf-f0dcf4c816b2.png)
-
-Luego agreguemos el método **PaginaTest** al controlador Home.
+Los bundles están definidos en el archivo **App_start/BundleConfig** en el metodo **RegisterBundles**
 
 ```c#
-public ActionResult PaginaTest()
+public static void RegisterBundles(BundleCollection bundles)
 {
-	return View();
+    namespace CapaPresentacionAdmin
+{
+    public class BundleConfig
+    {
+        public static void RegisterBundles(BundleCollection bundles)
+        {
+            bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
+                        "~/Scripts/jquery-{version}.js"));
+            bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
+                        "~/Scripts/jquery.validate*"));
+            bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
+                        "~/Scripts/modernizr-*"));
+            bundles.Add(new ScriptBundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/bootstrap.js"));
+            bundles.Add(new StyleBundle("~/Content/css").Include(
+                      "~/Content/bootstrap.css",
+                      "~/Content/site.css"));
+        }
+    }
+}
 }
 ```
 
-![image](https://user-images.githubusercontent.com/59342976/150660407-9eadb8fa-5f19-49ab-bcbd-14c703141bc3.png)
+Dicho metodo es llamado desde **Application_Start**.
 
-Click derecho sobre el metodo y agregamos una nueva vista.
+```c#
+public class MvcApplication : System.Web.HttpApplication
+{
+	protected void Application_Start()
+	{
+		AreaRegistration.RegisterAllAreas();
+		FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+		RouteConfig.RegisterRoutes(RouteTable.Routes);
+		BundleConfig.RegisterBundles(BundleTable.Bundles); // <----
+	}
+}
 
-![image](https://user-images.githubusercontent.com/59342976/150660413-536676d6-d33f-4ea3-9cb2-6742a8f0a94e.png)
+```
 
-Elegimos "Vista de MVC 5".
+La ventaja de usar bundles es la facil optimización a las peticiones al servidor que proporciona, para mas información puedes ir a los s
 
-![image](https://user-images.githubusercontent.com/59342976/150660419-80c05499-c868-4231-a23b-2a176dad725f.png)
+* [Bundling and Minification](https://docs.microsoft.com/en-us/aspnet/mvc/overview/performance/bundling-and-minification)
+* [Bundles en ASP.NET MVC4](https://geeks.ms/etomas/2012/07/30/bundles-en-asp-net-mvc4/#:~:text=Los%20bundles%20es%20el%20mecanismo,que%20est%C3%A1n%20relacionados%20entre%20ellos.&text=En%20lugar%20de%20incluir%20directamente,Render%20y%20Scripts.)
 
-Usamos **_Layout.cshtml** como pagina de diseño y agregamos.
+## Plantillas Bootstrap
 
-![image](https://user-images.githubusercontent.com/59342976/150660578-ab10ff79-0edf-4150-b291-86648fdf59f5.png)
+Utilizaremos unas plantillas de Bootstrap utilizaremos el siguiente enlance: [Startbootstrap](https://startbootstrap.com/?showPro=false)
 
-Luego modificaremos un poco nuestra vista.
+![image](https://user-images.githubusercontent.com/59342976/152060555-d24c4552-f308-4661-a382-581ea5bc79c4.png)
 
-![image](https://user-images.githubusercontent.com/59342976/150660780-aa6686bc-843e-4bdc-ac4e-a0b184aaf9b0.png)
+Utilizaremos las siguiente tres plantillas:
 
-Y Verificamos los cambios.
+* [SB Admin](https://startbootstrap.com/template/sb-admin)
+* [Shop Homepage](https://startbootstrap.com/template/shop-homepage)
+* [Shop Item](https://startbootstrap.com/template/shop-item)
 
-![image](https://user-images.githubusercontent.com/59342976/150660795-b96aad41-f0d5-4ef0-aaf3-61572cbc4442.png)
+## Configurar Bootstrap 5
+
+Nuestro proyecto no cuenta con la versión 5 de Bootstrap sino con la número 3. Para configurarla tendremos que ir al gestor de paquetes nuget, simplemente tendremos que actualizar ambos proyectos.
+
+![image](https://user-images.githubusercontent.com/59342976/152084354-c10626f6-bfe8-402c-9ca6-34138e1f5bd3.png)
+
+## Configurar BundleConfig
+
+Tendremos que hacer unos cambios menores a nuestros Bundles, de tal forma que nos quede de la siguiente manera:
+
+```c#
+using System.Web;
+using System.Web.Optimization;
+
+namespace CapaPresentacionAdmin
+{
+    public class BundleConfig
+    {
+        public static void RegisterBundles(BundleCollection bundles)
+        {
+            bundles.Add(new Bundle("~/bundles/jquery").Include(
+                        "~/Scripts/jquery-{version}.js"));
+
+            bundles.Add(new Bundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/bootstrap.bundle.js"));
+
+            bundles.Add(new StyleBundle("~/Content/css").Include("~/Content/site.css"));
+        }
+    }
+}
+```
+
+## Integración de la nueva plantilla
+
+Nos dirigiremos a **Views/Shared/_Layaout.cshtml** y realizaremos la siguientes modificaciones:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Mi aplicación ASP.NET</title>
+    @Styles.Render("~/Content/css")
+</head>
+<body>
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar Brand-->
+        <a class="navbar-brand ps-3" href="index.html">Start Bootstrap</a>
+        <!-- Sidebar Toggle-->
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        <!-- Navbar Search-->
+        <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+            <div class="input-group">
+                <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..." aria-describedby="btnNavbarSearch" />
+                <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+            </div>
+        </form>
+        <!-- Navbar-->
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#!">Settings</a></li>
+                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="#!">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="index.html">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Interface</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
+                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                            Layouts
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="layout-static.html">Static Navigation</a>
+                                <a class="nav-link" href="layout-sidenav-light.html">Light Sidenav</a>
+                            </nav>
+                        </div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            Pages
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
+                                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseAuth" aria-expanded="false" aria-controls="pagesCollapseAuth">
+                                    Authentication
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="pagesCollapseAuth" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <a class="nav-link" href="login.html">Login</a>
+                                        <a class="nav-link" href="register.html">Register</a>
+                                        <a class="nav-link" href="password.html">Forgot Password</a>
+                                    </nav>
+                                </div>
+                                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseError" aria-expanded="false" aria-controls="pagesCollapseError">
+                                    Error
+                                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                </a>
+                                <div class="collapse" id="pagesCollapseError" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
+                                    <nav class="sb-sidenav-menu-nested nav">
+                                        <a class="nav-link" href="401.html">401 Page</a>
+                                        <a class="nav-link" href="404.html">404 Page</a>
+                                        <a class="nav-link" href="500.html">500 Page</a>
+                                    </nav>
+                                </div>
+                            </nav>
+                        </div>
+                        <div class="sb-sidenav-menu-heading">Addons</div>
+                        <a class="nav-link" href="charts.html">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                            Charts
+                        </a>
+                        <a class="nav-link" href="tables.html">
+                            <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+                            Tables
+                        </a>
+                    </div>
+                </div>
+                <div class="sb-sidenav-footer">
+                    <div class="small">Logged in as:</div>
+                    Start Bootstrap
+                </div>
+            </nav>
+        </div>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    @RenderBody()
+                </div>
+            </main>
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2021</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    @*<li>@Html.ActionLink("Inicio", "Index", "Home")</li>
+    <li>@Html.ActionLink("Acerca de", "About", "Home")</li>
+    <li>@Html.ActionLink("Contacto", "Contact", "Home")</li>
+    <li>@Html.ActionLink("Pagina de pruebas", "PaginaTest", "Home")</li>*@
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+```
+
+Copiaremos y pegaremos lo que hay dentro del fichero con ruta **startbootstrap-sb-admin-gh-pages\css\styles.css** en el fichero con ruta **Content\Site.css**
+
+![image](https://user-images.githubusercontent.com/59342976/152089524-eefec3a4-7637-4e36-8143-9da4a7f3ebce.png)
+
+![image](https://user-images.githubusercontent.com/59342976/152089579-df2b1879-264e-489c-8bd9-1768f90a4941.png)
+
+También agregaremos el archivo script.js que tiene la ruta **startbootstrap-sb-admin-gh-pages\js\scripts.js** en la carpeta script de nuestro proyecto.
+
+![image](https://user-images.githubusercontent.com/59342976/152090345-b33591e2-c107-462d-a976-20ccf22ee9f5.png)
+
+También para llamarlo tendremos que añadirlo a la configuración de Bundles.
+
+```c#
+bundles.Add(new Bundle("~/bundles/complementos").Include(
+                        "~/Scripts/script.js"));
+```
+
+También tendremos que añadir el script a nuestro **_Layaout.cshtml**
+
+```c#
+@Scripts.Render("~/bundles/complementos")
+```
