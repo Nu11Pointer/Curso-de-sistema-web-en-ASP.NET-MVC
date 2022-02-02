@@ -92,7 +92,7 @@ namespace CapaPresentacionAdmin
 
             bundles.Add(new Bundle("~/bundles/bootstrap").Include(
                       "~/Scripts/bootstrap.bundle.js"));
-
+		      
             bundles.Add(new StyleBundle("~/Content/css").Include("~/Content/site.css"));
         }
     }
@@ -107,11 +107,12 @@ Nos dirigiremos a **Views/Shared/_Layaout.cshtml** y realizaremos la siguientes 
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title - Mi aplicación ASP.NET</title>
     @Styles.Render("~/Content/css")
+    @*@Scripts.Render("~/bundles/modernizr")*@
 </head>
 <body>
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
@@ -229,13 +230,12 @@ Nos dirigiremos a **Views/Shared/_Layaout.cshtml** y realizaremos la siguientes 
             </footer>
         </div>
     </div>
-    @*<li>@Html.ActionLink("Inicio", "Index", "Home")</li>
-    <li>@Html.ActionLink("Acerca de", "About", "Home")</li>
-    <li>@Html.ActionLink("Contacto", "Contact", "Home")</li>
-    <li>@Html.ActionLink("Pagina de pruebas", "PaginaTest", "Home")</li>*@
+
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
+</body>
+</html>
 ```
 
 Copiaremos y pegaremos lo que hay dentro del fichero con ruta **startbootstrap-sb-admin-gh-pages\css\styles.css** en el fichero con ruta **Content\Site.css**
@@ -260,3 +260,21 @@ También tendremos que añadir el script a nuestro **_Layaout.cshtml**
 ```c#
 @Scripts.Render("~/bundles/complementos")
 ```
+Para el tema de iconos tendremos que instalar el paquete Font.Awesome
+
+![image](https://user-images.githubusercontent.com/59342976/152095152-0b0a1025-2e31-4fc1-9ba5-d890e5783309.png)
+
+Luego modificaremos nuestro Bundles complementos de esta forma:
+
+```c#
+bundles.Add(new Bundle("~/bundles/complementos").Include(
+                      "~/Scripts/fontawesome/all.min.js",
+                      "~/Scripts/scripts.js"));
+```
+
+Y este es nuestro resultado
+
+![image](https://user-images.githubusercontent.com/59342976/152095849-77209912-58a2-4e7d-9bb5-98a31bc654b7.png)
+
+![image](https://user-images.githubusercontent.com/59342976/152095872-0bcd1707-f2b8-4de2-9777-56835e6fbce2.png)
+
