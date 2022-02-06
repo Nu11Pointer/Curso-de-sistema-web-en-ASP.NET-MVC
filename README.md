@@ -1,181 +1,168 @@
-# Curso de sistema web en ASP.NET MVC + SQL Server - Parte 05
+# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 06
 
-## Creando Controladores y vistas
+## Agregando un nuevo registro a la tabla USUARIO
 
-![image](https://user-images.githubusercontent.com/59342976/152604226-654779ae-54e7-4351-a2f4-6671f89895a9.png)
+Agregaremos el siguiente registro:
 
-Cuando le damos click en algun boton, nos redirecciona al sitio que se muestra en la imagen anterior indicandonos que ha ocurrido un error y el enlace al sitio solicitado no existe. 
+```sql
+INSERT INTO USUARIO (
+	Nombres,
+	Apellidos,
+	Correo,
+	Clave
+	)
+VALUES (
+	'test 02',
+	'user 02',
+	'user02@example.com',
+	'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae'
+	)
+```
 
-![image](https://user-images.githubusercontent.com/59342976/152615973-90d1fd79-e7cf-4148-b290-9ed73d8d65b4.png)
+![image](https://user-images.githubusercontent.com/59342976/152661573-447df0bf-5a5f-4976-b9c2-f890dabc6e32.png)
+
+Es un poco dificil de ver en este estado, pero si lo reordenamos un poco este es nuestro resultado:
+
+```Json
+[
+   {
+      "IdUsuario":1,
+      "Nombres":"test nombre",
+      "Apellidos":"test apellido",
+      "Correo":"test@example.com",
+      "Clave":"ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae",
+      "Reestablecer":true,
+      "Activo":true
+   },
+   {
+      "IdUsuario":2,
+      "Nombres":"test 02",
+      "Apellidos":"user 02",
+      "Correo":"user02@example.com",
+      "Clave":"ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae",
+      "Reestablecer":true,
+      "Activo":true
+   }
+]
+```
+
+## Diseñar Formulario Usuario
+
+![image](https://user-images.githubusercontent.com/59342976/152664240-629a8003-7a11-4e9e-85e5-321f91b86886.png)
+
+El formulario de usuarios de momento solo tiene un titulo que nos indica que en efecto estamos en formulario Usuarios. Siguiendo el ejemplo de la plantilla **sb-admin** colocaremos el siguiente fragmento de codigo:
+
+```html
+
+@{
+    ViewBag.Title = "Usuarios";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1 class="mt-4">Usuarios</h1>
+
+<ol class="breadcrumb mb-4">
+	<li class="breadcrumb-item"><a href="index.html">Resumen</a></li>
+	<li class="breadcrumb-item active">Usuarios</li>
+</ol>
+```
+
+![image](https://user-images.githubusercontent.com/59342976/152664272-05fe74ee-d0c1-4caf-ab58-dd5104c0aa73.png)
+
+Luego para darle un poco de diseño utilizaremos el siguiente ejemplo de [Cards Bootstrap v5.0](https://getbootstrap.com/docs/5.0/components/card/#header-and-footer).
+
+```html
+<div class="card">
+	<h5 class="card-header">Featured</h5>
+	<div class="card-body">
+		<h5 class="card-title">Special title treatment</h5>
+		<p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+		<a href="#" class="btn btn-primary">Go somewhere</a>
+	</div>
+</div>
+```
+
+Lo modificaremos un poco y le agregaremos un icono usando **FontAwesome** y eliminaremos el cuerpo:
+
+```html
+<div class="card">
+	<div class="card-header">
+		<i class="fas fa-users me-1"></i> Lista de Usuarios
+	</div>
+	<div class="card-body"></div>
+</div>
+```
+
+Y dentro de **card-body** colocaremos un boton y una tabla con las columnas que necesitamos pero vacía.
+
+```html
+<div class="row">
+	<div class="col-12">
+		<button type="button" class="btn btn-success">Crear Nuevo</button>
+	</div>
+</div>
+<hr />
+<table id="tabla" class="display cell-border" style="width: 100%">
+	<thead>
+		<tr>
+			<th>Nombres</th>
+			<th>Apellidos</th>
+			<th>Correo</th>
+			<th>Activo</th>
+		</tr></thead>
+	<tbody>
+	</tbody>
+</table>
+```
+
+### ¿Qué es DataTables?
+
+![image](https://user-images.githubusercontent.com/59342976/152664361-f34f6ff3-6e0c-4c26-81ff-eb4ae2d9a440.png)
 
 
-Esto es porque no tenemos vistas funcionales en nuestro proyecto, las unicas que tenemos actuales son del controlador **HomeControler** (**Index**, **About** y **Contact**). Para solucionar este problema entraremos al controlador **Home** y eliminaremos todas los metodos a excepcion de **Index()**, también eliminaremos las vistas correspondientes a dichos metodos las cuales se cuentran en **Views/Home/**. Creamos el metodo **Usuario()** y con click derecho agregamos una vista MVC5. Nos debería quedar algo como lo siguiente:
+Como bien lo describe su web oficial [DataTable](https://datatables.net/) es un plugin de jQuery para crear tablas avanzadas e incliuye funciones como:
 
-### HomeController
+* Paginación.
+* Busqueda instantanea.
+* Ordenamiento multicolumna.
+* Entre otras muchas cosas.
 
-```c#
-namespace CapaPresentacionAdmin.Controllers
-{
-    public class HomeController : Controller
-    {
-        public ActionResult Index()
-        {
-            return View();
-        }
-        
-        public ActionResult Usuarios()
-        {
-            return View();
-        }
-    }
+### ¿Qué es Ajax?
+
+Ajax (Asynchronous JavaScript and XML) se refiere a un grupo de tecnologías que se utilizan para desarrollar aplicaciones web. En palabras sencillas Ajax nos permite generar solicitudes al servidor sin necesidad de recargar la pagina.
+
+#### Usando Ajax
+
+Haciendo uso de **@RenderSection("scripts", required: false)** que se encuentra en **_Layaout.cshtml** el cual nos permite generar scripts de la siguiente manera:
+
+```html
+@section scripts{
+    <script>
+	    ...
+    </script>
 }
 ```
 
-![image](https://user-images.githubusercontent.com/59342976/152616269-95b25cb5-05c9-427f-9f18-4c9c9e914035.png)
+Lo utilizaremos para mostrar en la consola del navegador nuestra lista de usuarios, de la siguiente manera:
 
-Tambien crearemos el controlador **Mantenedor** como se muestra en la imagen anterior, con sus respectivos metodos y vistas:
-
-```c#
-namespace CapaPresentacionAdmin.Controllers
-{
-    public class MantenedorController : Controller
-    {
-        // GET: Mantenedor
-        public ActionResult Categoria()
-        {
-            return View();
-        }
-
-        public ActionResult Marca()
-        {
-            return View();
-        }
-
-        public ActionResult Producto()
-        {
-            return View();
-        }
-    }
-}
-```
-
-![image](https://user-images.githubusercontent.com/59342976/152616500-77586bc8-03b7-4248-8a3e-b3fbe2f922d2.png)
-
-## Formulario Usuarios
-
-Lo primero que haremos será crear nuestra cadena de conexión, dentro de **Web.config** en mi caso es la siguiente:
-
-```xml
-<connectionStrings>
-	<add name="cadena" providerName="System.Data.ProviderName" connectionString="Data Source=(local);Initial Catalog=DBCARRITO;User ID=sa;Password=123;"/>
-</connectionStrings>
-```
-
-![image](https://user-images.githubusercontent.com/59342976/152628255-0f35082a-b2b3-4e59-9734-c3458aad020d.png)
-
-Verificaremos que tengamos la referencia a **System.Configuration** para esto abriremos el Administrador de referencias del proyecto **CapaDatos** haciendo click derecho > Agregar > Referencia > Ensamblados. Y procederemos a crear la clase **Conexion** que tendra esta estructura:
-
-### Conexion
-
-```c#
-using System.Configuration;
-
-namespace CapaDatos
-{
-    public class Conexion
-    {
-        public static string cn = ConfigurationManager.ConnectionStrings["cadena"].ToString();
-    }
-}
-```
-
-Tambien deberemos agregar las siguientes referencias:
-
-* CapaDatos
-	* CapaEntidad
-* CapaNegocio
-	* CapaEntidad
-	* CapaDatos
-* CapaPresentacionAdmin
-	* CapaEntidad
-	* CapaNegocio
-* CapaPresentacionTienda
-	* CapaEntidad
-	* CapaNegocio
-
-Dentro de **CapaDatos** crearemos la clase **CD_Usuarios** que tendrá la siguiente estructura:
-
-```c#
-using CapaDatos;
-using CapaEntidad;
-using System.Collections.Generic;
-
-namespace CapaNegocio
-{
-    public class CN_Usuarios
-    {
-        private CD_Usuarios objCapaDato = new CD_Usuarios();
-
-        public List<Usuario> Listar()
-        {
-            return objCapaDato.Listar();
-        }
-    }
-}
-```
-Luego dentro de **CapaNegocio** crearemos la clase **CN_Usuarios**
-
-```C#
-using CapaEntidad;
-using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Data;
-
-namespace CapaDatos
-{
-    public class CD_Usuarios
-    {
-        public List<Usuario> Listar()
-        {
-            var lista = new List<Usuario>();
-            try
-            {
-                using (var oconexion = new SqlConnection(Conexion.cn))
-                {
-                    string query = "select IdUsuario, Nombres, Apellidos, Correo, Clave, Reestablecer, Activo from USUARIO";
-                    var cmd = new SqlCommand()
-                    {
-                        CommandText = query,
-                        Connection = oconexion,
-                        CommandType = CommandType.Text
-                    };
-                    oconexion.Open();
-                    using (SqlDataReader dr = cmd.ExecuteReader())
-                    {
-                        while (dr.Read())
-                        {
-                            lista.Add(new Usuario()
-                            {
-                                IdUsuario = Convert.ToInt32(dr["IdUsuario"]),
-                                Nombres = dr["Nombres"].ToString(),
-                                Apellidos = dr["Apellidos"].ToString(),
-                                Correo = dr["Correo"].ToString(),
-                                Clave = dr["Clave"].ToString(),
-                                Reestablecer = Convert.ToBoolean(dr["Reestablecer"]),
-                                Activo = Convert.ToBoolean(dr["Activo"])
-                            });
-                        }
-                    }
-                }
+```html
+@section scripts{
+    <script>
+        jQuery.ajax({
+            url: '@Url.Action("ListarUsuarios", "Home")',
+            type: "GET",
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                console.log(data)
             }
-            catch (Exception)
-            {
-            }
-            return lista;
-        }
-    }
+        })
+    </script>
 }
 ```
 
-El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte05)
+Y este es el resultado:
+
+![image](https://user-images.githubusercontent.com/59342976/152665082-1f8b723b-7eee-400b-ae73-4e563f9578fc.png)
+
+El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte06)
