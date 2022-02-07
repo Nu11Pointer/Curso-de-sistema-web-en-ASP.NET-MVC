@@ -1,153 +1,62 @@
-# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 06
+# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 07
 
-## Agregando un nuevo registro a la tabla USUARIO
+## Empleado DataTable
 
-Agregaremos el siguiente registro:
+![image](https://user-images.githubusercontent.com/59342976/152704705-aca3d108-edd6-48e1-a365-601180a7527b.png)
 
-```sql
-INSERT INTO USUARIO (
-	Nombres,
-	Apellidos,
-	Correo,
-	Clave
-	)
-VALUES (
-	'test 02',
-	'user 02',
-	'user02@example.com',
-	'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae'
-	)
-```
+Lo primero que tendremos que hacer es instalar **jquery.datatables** usando nuestro gestor de paquetes nugget. Y deberemos crear sus respectivas referencias en la "Union/Bundle" en el archivo **BundleCongif.cs**.
 
-![image](https://user-images.githubusercontent.com/59342976/152661573-447df0bf-5a5f-4976-b9c2-f890dabc6e32.png)
+```c#
+using System.Web.Optimization;
 
-Es un poco dificil de ver en este estado, pero si lo reordenamos un poco este es nuestro resultado:
+namespace CapaPresentacionAdmin
+{
+    public class BundleConfig
+    {
+        public static void RegisterBundles(BundleCollection bundles)
+        {
+            bundles.Add(new Bundle("~/bundles/jquery").Include(
+                        "~/Scripts/jquery-{version}.js"));
 
-```Json
-[
-   {
-      "IdUsuario":1,
-      "Nombres":"test nombre",
-      "Apellidos":"test apellido",
-      "Correo":"test@example.com",
-      "Clave":"ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae",
-      "Reestablecer":true,
-      "Activo":true
-   },
-   {
-      "IdUsuario":2,
-      "Nombres":"test 02",
-      "Apellidos":"user 02",
-      "Correo":"user02@example.com",
-      "Clave":"ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae",
-      "Reestablecer":true,
-      "Activo":true
-   }
-]
-```
+            bundles.Add(new Bundle("~/bundles/complementos").Include(
+                      "~/Scripts/fontawesome/all.min.js",
+                      "~/Scripts/DataTables/jquery.dataTables.js",
+                      "~/Scripts/DataTables/dataTables.responsive.js",
+                      "~/Scripts/scripts.js"
+                      ));
 
-## Diseñar Formulario Usuario
+            bundles.Add(new Bundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/bootstrap.bundle.js"));
 
-![image](https://user-images.githubusercontent.com/59342976/152664240-629a8003-7a11-4e9e-85e5-321f91b86886.png)
-
-El formulario de usuarios de momento solo tiene un titulo que nos indica que en efecto estamos en formulario Usuarios. Siguiendo el ejemplo de la plantilla **sb-admin** colocaremos el siguiente fragmento de codigo:
-
-```html
-
-@{
-    ViewBag.Title = "Usuarios";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+            bundles.Add(new StyleBundle("~/Content/css").Include(
+                "~/Content/site.css",
+                "~/Content/DataTables/css/jquery.dataTables.css",
+                "~/Content/DataTables/css/responsive.dataTables.css"
+                ));
+        }
+    }
 }
-
-<h1 class="mt-4">Usuarios</h1>
-
-<ol class="breadcrumb mb-4">
-	<li class="breadcrumb-item"><a href="index.html">Resumen</a></li>
-	<li class="breadcrumb-item active">Usuarios</li>
-</ol>
 ```
 
-![image](https://user-images.githubusercontent.com/59342976/152664272-05fe74ee-d0c1-4caf-ab58-dd5104c0aa73.png)
+Tambien deberemos cambiar la manera en devolvemos el listado de usuarios ya que DataTable recibira un json que tenga un atributo de nombre **data** es ahí donde colocaremos nuestra lista:
 
-Luego para darle un poco de diseño utilizaremos el siguiente ejemplo de [Cards Bootstrap v5.0](https://getbootstrap.com/docs/5.0/components/card/#header-and-footer).
-
-```html
-<div class="card">
-	<h5 class="card-header">Featured</h5>
-	<div class="card-body">
-		<h5 class="card-title">Special title treatment</h5>
-		<p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-		<a href="#" class="btn btn-primary">Go somewhere</a>
-	</div>
-</div>
+```c#
+[HttpGet]
+public JsonResult ListarUsuarios()
+{
+    List<Usuario> oLista = new CN_Usuarios().Listar();
+    return Json(new { data = oLista }, JsonRequestBehavior.AllowGet);
+}
 ```
 
-Lo modificaremos un poco y le agregaremos un icono usando **FontAwesome** y eliminaremos el cuerpo:
-
-```html
-<div class="card">
-	<div class="card-header">
-		<i class="fas fa-users me-1"></i> Lista de Usuarios
-	</div>
-	<div class="card-body"></div>
-</div>
-```
-
-Y dentro de **card-body** colocaremos un boton y una tabla con las columnas que necesitamos pero vacía.
-
-```html
-<div class="row">
-	<div class="col-12">
-		<button type="button" class="btn btn-success">Crear Nuevo</button>
-	</div>
-</div>
-<hr />
-<table id="tabla" class="display cell-border" style="width: 100%">
-	<thead>
-		<tr>
-			<th>Nombres</th>
-			<th>Apellidos</th>
-			<th>Correo</th>
-			<th>Activo</th>
-		</tr></thead>
-	<tbody>
-	</tbody>
-</table>
-```
-
-### ¿Qué es DataTables?
-
-![image](https://user-images.githubusercontent.com/59342976/152664361-f34f6ff3-6e0c-4c26-81ff-eb4ae2d9a440.png)
-
-
-Como bien lo describe su web oficial [DataTable](https://datatables.net/) es un plugin de jQuery para crear tablas avanzadas e incliuye funciones como:
-
-* Paginación.
-* Busqueda instantanea.
-* Ordenamiento multicolumna.
-* Entre otras muchas cosas.
-
-### ¿Qué es Ajax?
-
-Ajax (Asynchronous JavaScript and XML) se refiere a un grupo de tecnologías que se utilizan para desarrollar aplicaciones web. En palabras sencillas Ajax nos permite generar solicitudes al servidor sin necesidad de recargar la pagina.
-
-#### Usando Ajax
-
-Haciendo uso de **@RenderSection("scripts", required: false)** que se encuentra en **_Layaout.cshtml** el cual nos permite generar scripts de la siguiente manera:
+Para finalizar agregaremos el siguiente codigo al script:
 
 ```html
 @section scripts{
     <script>
-	    ...
-    </script>
-}
-```
 
-Lo utilizaremos para mostrar en la consola del navegador nuestra lista de usuarios, de la siguiente manera:
+        var tabladata;
 
-```html
-@section scripts{
-    <script>
         jQuery.ajax({
             url: '@Url.Action("ListarUsuarios", "Home")',
             type: "GET",
@@ -157,12 +66,89 @@ Lo utilizaremos para mostrar en la consola del navegador nuestra lista de usuari
                 console.log(data)
             }
         })
+
+        tabladata = $("#tabla").DataTable()
     </script>
 }
 ```
 
-Y este es el resultado:
+![image](https://user-images.githubusercontent.com/59342976/152707190-3a832d5b-5dbf-42cb-9016-fa2a9d7f671a.png)
 
-![image](https://user-images.githubusercontent.com/59342976/152665082-1f8b723b-7eee-400b-ae73-4e563f9578fc.png)
+Ahora tendremos que agregar algunos parametros por ejemplo necesitamos indicarle a DataTable lo siguiente:
 
-El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte06)
+* La tabla tiene que ser reponsiva: ```responsive: true```
+* No queremos que se ordenen las columnas: ```ordering: false```
+* La petición de los datos con **Ajax**: ```"ajax": { url: '@Url.Action("ListarUsuarios", "Home")', type: "GET", dataType: "json" }```
+* Nuestras Columnas (Las columnas deben tener el mismo nombre que en el Json que recibimos): ```"columns":[{ "data": "columna1" },...]```
+
+Al final obtendremos lo siguiente:
+
+```html
+@section scripts{
+    <script>
+
+        var tabladata;
+
+        tabladata = $("#tabla").DataTable({
+            responsive: true,
+            ordering: false,
+            "ajax": {
+                url: '@Url.Action("ListarUsuarios", "Home")',
+                type: "GET",
+                dataType: "json"
+            },
+            "columns": [
+                { "data": "Nombres" },
+                { "data": "Apellidos" },
+                { "data": "Correo" },
+                { "data": "Activo" }
+            ]
+        });
+    </script>
+}
+```
+
+Para personlizarlo un poco en vez de retornar ```True``` o ```False``` retornaremos un (Badge Bootsrap v5.0)[https://getbootstrap.com/docs/5.0/components/badge/] haciendo uso de la propiedad render y agregaremos una columna para los botones de las operaciones **Editar** y **Eliminar**. Obtendremos lo siguiente:
+
+```html
+@section scripts{
+    <script>
+
+        var tabladata;
+	    
+        tabladata = $("#tabla").DataTable({
+            responsive: true,
+            ordering: false,
+            "ajax": {
+                url: '@Url.Action("ListarUsuarios", "Home")',
+                type: "GET",
+                dataType: "json"
+            },
+            "columns": [
+                { "data": "Nombres" },
+                { "data": "Apellidos" },
+                { "data": "Correo" },
+                {
+                    "data": "Activo", "render": function (valor) {
+                        if (valor)
+                            return '<span class="badge bg-success">Si</span>';
+                        else
+                            return '<span class="badge bg-danger">No</span>';
+                    }
+                },
+                {
+                    "defaultContent": '<button type="button" class="btn btn-primary btn-sm"><i class="fas fa-pen"></i></button>' +
+                        '<button type="button" class="btn btn-danger btn-sm ms-2"><i class="fas fa-trash"></i></button>',
+                    "orderable": false,
+                    "searchable": false,
+                    "width":"90px"
+                }
+            ]
+        });
+    </script>
+}
+```
+
+![image](https://user-images.githubusercontent.com/59342976/152721818-c9d4d281-b8b4-42f1-a11d-ac2c4cb04777.png)
+
+El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte07)
