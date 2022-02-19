@@ -32,8 +32,8 @@ Crearemos una acción para nuestro controlador **Home** la cual será de tipo **
 
 ```json
 {
-   resultado:0,
-   mensaje:""
+   "resultado":0,
+   "mensaje":""
 }
 
 ```
@@ -58,5 +58,139 @@ public JsonResult GuardarUsuario(Usuario objeto)
 }
 
 ```
+
+## Guardar
+
+Para realizar la petición utilizaremos **Ajax** con las siguiente propiedades:
+
+* La url será manera dinamica con ```Url.Action``` indicando nuestra acción y controlador
+* El tipo de petición será de tipo **POST** ya que estaremos enviando datos.
+* La propiedad **data** será un **Json** el cual tiene la siguiente estructura:
+
+```Json
+{
+	"Activo":true,
+	"Apellidos":"",
+	"Correo":"",
+	"IdUsuario":"",
+	"Nombres":"",
+	"Reestablecer":true
+}
+
+```
+
+* El tipo de dato será **Json**.
+* El tipo de contenido será una aplicacción json con formato utf-8.
+
+```js
+function Guardar() {
+
+    var Usuario = {
+        Activo: $("#cboactivo").val() == 1 ? true : false,
+        Apellidos: $("#txtapellidos").val(),
+        Correo: $("#txtcorreo").val(),
+        IdUsuario: $("#txtid").val(),
+        Nombres: $("#txtnombres").val(),
+        Reestablecer: true
+    }
+
+    jQuery.ajax({
+        url: '@Url.Action("GuardarUsuario", "Home")',
+        type: "POST",
+        data: JSON.stringify({ objeto: Usuario }),
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            
+        },
+        error: function (error) {
+            console.log(error)
+        },
+        beforeSend: function () {
+
+        }
+    });
+}
+
+```
+
+## Función Succes
+
+Ahora tenemos que crear la función que nos muestre los cambios que han sido realizada. Pero hay unas consideración que tenemos que tomar, si bien la consultado fue catalogada como "exitosa" no tiene porque serlo segun nuestras reglas de negocio. Primero veamos los resultados de unas consultas que caerían dentro **success**.
+
+### Registrar Exito
+
+```json
+{
+    "resultado":1,
+    "mensaje":""
+}
+
+```
+
+### Registrar Error 
+
+```json
+{
+    "resultado":0,
+    "mensaje":"Mensaje de Error"
+}
+
+```
+
+### Editar Exito
+
+```json
+{
+    "resultado":true,
+    "mensaje":""
+}
+
+```
+
+### Editar Exito
+
+```json
+{
+    "resultado":false,
+    "mensaje":"mensaje de error"
+}
+
+```
+
+Con estos ejemplos podemos crear nuestra función, ahora todas estas respuestas las catagaloremos con el nombre ```data```, tambien hay que tener en cuenta que nosotros todavía tenemos en memoría el Usuario que hemos mandado, es decir si el usuario fue enviado para su creación, el usuario tendrá un id igual a cero de lo contrario será para su edición. Ahora dentro de ambos casos tendremos un exito y un fracaso, en el caso de creación es exitoso si el id recibido (data.resultado) es diferente de 0 y para editar su resultado será verdadero.
+
+```js
+function (data) {
+    // Usuario Nuevo
+    if (Usuario.IdUsuario == 0) {
+
+        if (data.resultado != 0) {
+            Usuario.IdUsuario = data.resultado;
+            tabladata.row.add(Usuario).draw(false);
+            $("#FormModal").modal("hide");
+        }
+        else {
+            $("#mensajeError").text(data.mensaje);
+            $("#mensajeError").show();
+        }
+    }
+    // Usuario Editar
+    else {
+        if (data.resultado) {
+            tabladata.row(filaSeleccionada).data(Usuario).draw(false);
+            filaSeleccionada = null;
+            $("#FormModal").modal("hide");
+        }
+        else {
+            $("#mensajeError").text(data.mensaje);
+            $("#mensajeError").show();
+        }
+    }
+}
+
+```
+
+![image](https://user-images.githubusercontent.com/59342976/154811494-7f1b1798-f3ae-463b-9678-bde50627d392.png)
 
 El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte11)
