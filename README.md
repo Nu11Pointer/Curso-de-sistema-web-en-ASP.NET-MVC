@@ -1,196 +1,157 @@
-# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 10
+# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 12
 
-## Alerts
+## Importando Librerias
 
-![image](https://user-images.githubusercontent.com/59342976/154784582-60f712ee-bf32-4b41-8b7f-2afb6eb786d6.png)
+Las librerias que vamos a importar serán [jQuery LoadingOverlay](https://gasparesganga.com/labs/jquery-loading-overlay/) y [SweetAlert for Bootstrap](https://lipis.github.io/bootstrap-sweetalert/)
 
-Implementaremos algo que mejor que ```alert()``` lo haremos utilizando [Alerts · Bootstrap v5.0](https://getbootstrap.com/docs/5.0/components/alerts/) especificamente utilizaremos **danger alert** colocandola luego de nuestros imputs pero dentro del cuerpo del **Modal**.
+## SweetAlert for Bootstrap
 
-```html
-<div class="row mt-2">
-	<div class="col-12">
-		<div id="mensajeError" class="alert alert-danger" role="alert">
-			A simple danger alert—check it out!
-		</div>
-	</div>
-</div>
+![image](https://user-images.githubusercontent.com/59342976/154823868-a572366a-d408-4c8c-b547-5845b46c52ee.png)
 
-```
+Esta libreria esta disponible desde el administrador de paquetes nugget así que simplemente buscaremos ```SweetAlert.Bootstrap``` e instalaremos.
 
-y no olvidemos de esconderlo cada vez que se abra el modal, colocaremos lo siguiente dentro de la funcion ```abrirModal```
+### Correción de errores
 
-```js
-$("#mensajeError").hide();
+![image](https://user-images.githubusercontent.com/59342976/154823952-5b200ff4-8bc2-4a1c-a0d2-ccf69f0f774c.png)
 
-```
+Esta librería trabaja con una versión vieja de bootstrap así que iremos al archivo ```.\CapaPresentacionAdmin\Scripts\sweetalert.min.js``` y cambiaremos el contenido de la propiedad **cancelButtonClass** por **"btn-dark"**
 
-## HomeController
+## jQuery LoadingOverlay
 
-### GuardarUsuario
+![image](https://user-images.githubusercontent.com/59342976/154824028-de79cb00-6dcc-4661-a811-a2e384391102.png)
 
-Crearemos una acción para nuestro controlador **Home** la cual será de tipo **POST**, por parametro solicitará el usuario a guardar bien sea para registrarlo o editarlo, devolvera un **Json** con la siguiente estructura:
+Esta librería la encontraremos en [este enlace](https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js) la nombraremos ```loadingoverlay.min.js``` lo colocaremos en una carpeta de nombre ```loadingoverlay``` dentro de la carpeta ```Scripts``` de nuestro proyecto ```CapaPresentaciónAdmin``` tal como aparece en la imagen anterior.
 
-```json
-{
-   "resultado":0,
-   "mensaje":""
-}
+## Añadiendo los Bundles de jQuery LoadingOverlay y SweetAlert for Bootstrap
 
-```
-
-La propiedad resultado hace referencia al ID del Usuario, este será cero si la petición no se completó exitosamente y mensaje hará referencia al error producido, en caso de que no hay errores el mensaje será vacio y el resultado será un numero diferente a cero.
+Una de las cosas de las cuales no podemos olvidarnos es de agregar los Bundles/Paquetes a nuestro proyecto ya que esto nos permitirá utilizarlos en todas las paginas de este. Empezemos por los scripts estos serán:
 
 ```c#
-[HttpPost]
-public JsonResult GuardarUsuario(Usuario objeto)
+"~/Scripts/loadingoverlay/loadingoverlay.min.js",
+"~/Scripts/sweetalert.min.js",
+
+```
+
+Y ahora los estilos.
+
+```c#
+"~/Content/sweetalert.css"
+
+```
+
+Al final este será el resultado de nuestro **BundleConfig**:
+
+```c#
+using System.Web.Optimization;
+
+namespace CapaPresentacionAdmin
 {
-	object resultado;
-	string mensaje = string.Empty;
-	if (objeto.IdUsuario == 0)
-	{
-		resultado = new CN_Usuarios().Registrar(objeto, out mensaje);
-	}
-	else
-	{
-		resultado = new CN_Usuarios().Editar(objeto, out mensaje);
-	}
-	return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+    public class BundleConfig
+    {
+        public static void RegisterBundles(BundleCollection bundles)
+        {
+            bundles.Add(new Bundle("~/bundles/jquery").Include(
+                        "~/Scripts/jquery-{version}.js"));
+
+            bundles.Add(new Bundle("~/bundles/complementos").Include(
+                      "~/Scripts/fontawesome/all.min.js",
+                      "~/Scripts/DataTables/jquery.dataTables.js",
+                      "~/Scripts/DataTables/dataTables.responsive.js",
+                      "~/Scripts/loadingoverlay/loadingoverlay.min.js",
+                      "~/Scripts/sweetalert.min.js",
+                      "~/Scripts/scripts.js"
+                      ));
+
+            bundles.Add(new Bundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/bootstrap.bundle.js"));
+
+            bundles.Add(new StyleBundle("~/Content/css").Include(
+                "~/Content/site.css",
+                "~/Content/DataTables/css/jquery.dataTables.css",
+                "~/Content/DataTables/css/responsive.dataTables.css",
+                "~/Content/sweetalert.css"
+                ));
+        }
+    }
 }
 
 ```
 
-## Guardar
+## Utilizando jQuery LoadingOverlay
 
-Para realizar la petición utilizaremos **Ajax** con las siguiente propiedades:
+![image](https://user-images.githubusercontent.com/59342976/154824208-3eb5ac76-3339-4e57-9edb-fb936992f17a.png)
 
-* La url será manera dinamica con ```Url.Action``` indicando nuestra acción y controlador
-* El tipo de petición será de tipo **POST** ya que estaremos enviando datos.
-* La propiedad **data** será un **Json** el cual tiene la siguiente estructura:
+Dentro de la [Documentación de jQuery LoadingOverlay](https://gasparesganga.com/labs/jquery-loading-overlay/#examples) podemos encontrar ejemplos de scripts que podemos utilizar en nuestro proyecto, es bastante sencillo pero para la ocasión simplemente utilizaremos la siguiente propiedades:
 
-```Json
-{
-	"Activo":true,
-	"Apellidos":"",
-	"Correo":"",
-	"IdUsuario":"",
-	"Nombres":"",
-	"Reestablecer":true
-}
-
-```
-
-* El tipo de dato será **Json**.
-* El tipo de contenido será una aplicacción json con formato utf-8.
+* imageResizeFactor
+* text
+* size
 
 ```js
-function Guardar() {
+$(".modal-body").LoadingOverlay("show", {
+	imageResizeFactor: 2,
+	text: "Cargando...",
+	size: 14
+});
 
-    var Usuario = {
-        Activo: $("#cboactivo").val() == 1 ? true : false,
-        Apellidos: $("#txtapellidos").val(),
-        Correo: $("#txtcorreo").val(),
-        IdUsuario: $("#txtid").val(),
-        Nombres: $("#txtnombres").val(),
-        Reestablecer: true
-    }
-
-    jQuery.ajax({
-        url: '@Url.Action("GuardarUsuario", "Home")',
-        type: "POST",
-        data: JSON.stringify({ objeto: Usuario }),
-        dataType: "json",
-        contentType: "application/json; charset=utf-8",
-        success: function (data) {
-            
-        },
-        error: function (error) {
-            console.log(error)
-        },
-        beforeSend: function () {
-
-        }
-    });
-}
+$(".modal-body").LoadingOverlay("hide");
 
 ```
 
-## Función Succes
-
-Ahora tenemos que crear la función que nos muestre los cambios que han sido realizada. Pero hay unas consideración que tenemos que tomar, si bien la consultado fue catalogada como "exitosa" no tiene porque serlo segun nuestras reglas de negocio. Primero veamos los resultados de unas consultas que caerían dentro **success**.
-
-### Registrar Exito
-
-```json
-{
-    "resultado":1,
-    "mensaje":""
-}
-
-```
-
-### Registrar Error 
-
-```json
-{
-    "resultado":0,
-    "mensaje":"Mensaje de Error"
-}
-
-```
-
-### Editar Exito
-
-```json
-{
-    "resultado":true,
-    "mensaje":""
-}
-
-```
-
-### Editar Exito
-
-```json
-{
-    "resultado":false,
-    "mensaje":"mensaje de error"
-}
-
-```
-
-Con estos ejemplos podemos crear nuestra función, ahora todas estas respuestas las catagaloremos con el nombre ```data```, tambien hay que tener en cuenta que nosotros todavía tenemos en memoría el Usuario que hemos mandado, es decir si el usuario fue enviado para su creación, el usuario tendrá un id igual a cero de lo contrario será para su edición. Ahora dentro de ambos casos tendremos un exito y un fracaso, en el caso de creación es exitoso si el id recibido (data.resultado) es diferente de 0 y para editar su resultado será verdadero.
+La colocaremos en la función ```Guardar``` dentro de las propiedades de **jQuery.ajax** ```success```, ```error``` y ```beforeSend``` de esta manera:
 
 ```js
-function (data) {
-    // Usuario Nuevo
-    if (Usuario.IdUsuario == 0) {
+jQuery.ajax({
+    url: '@Url.Action("GuardarUsuario", "Home")',
+    type: "POST",
+    data: JSON.stringify({ objeto: Usuario }),
+    dataType: "json",
+    contentType: "application/json; charset=utf-8",
+    success: function (data) {
 
-        if (data.resultado != 0) {
-            Usuario.IdUsuario = data.resultado;
-            tabladata.row.add(Usuario).draw(false);
-            $("#FormModal").modal("hide");
+        $(".modal-body").LoadingOverlay("hide");
+        // Usuario Nuevo
+        if (Usuario.IdUsuario == 0) {
+
+            if (data.resultado != 0) {
+                Usuario.IdUsuario = data.resultado;
+                tabladata.row.add(Usuario).draw(false);
+                $("#FormModal").modal("hide");
+            }
+            else {
+                $("#mensajeError").text(data.mensaje);
+                $("#mensajeError").show();
+            }
         }
+        // Usuario Editar
         else {
-            $("#mensajeError").text(data.mensaje);
-            $("#mensajeError").show();
+            if (data.resultado) {
+                tabladata.row(filaSeleccionada).data(Usuario).draw(false);
+                filaSeleccionada = null;
+                $("#FormModal").modal("hide");
+            }
+            else {
+                $("#mensajeError").text(data.mensaje);
+                $("#mensajeError").show();
+            }
         }
+    },
+    error: function (error) {
+
+        $(".modal-body").LoadingOverlay("hide");
+        $("#mensajeError").text(error.responseText);
+        $("#mensajeError").show();
+    },
+    beforeSend: function () {
+
+        $(".modal-body").LoadingOverlay("show", {
+            imageResizeFactor: 2,
+            text: "Cargando...",
+            size: 14
+        });
     }
-    // Usuario Editar
-    else {
-        if (data.resultado) {
-            tabladata.row(filaSeleccionada).data(Usuario).draw(false);
-            filaSeleccionada = null;
-            $("#FormModal").modal("hide");
-        }
-        else {
-            $("#mensajeError").text(data.mensaje);
-            $("#mensajeError").show();
-        }
-    }
-}
+});
 
 ```
 
-![image](https://user-images.githubusercontent.com/59342976/154811494-7f1b1798-f3ae-463b-9678-bde50627d392.png)
-
-El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte11)
+El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte12)
