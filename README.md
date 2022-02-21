@@ -138,7 +138,7 @@ $("#tabla tbody").on("click", '.btn-eliminar', function () {
 
 Para enviar correos electronicos necesitaremos de las siguientes referencias y una cuenta de gmail.
 
-```
+``` c#
 using System;
 using System.Net;
 using System.Net.Mail;
