@@ -1,157 +1,198 @@
-# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 12
+# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 13
 
-## Importando Librerias
+# Implementación Eliminar Usuario
 
-Las librerias que vamos a importar serán [jQuery LoadingOverlay](https://gasparesganga.com/labs/jquery-loading-overlay/) y [SweetAlert for Bootstrap](https://lipis.github.io/bootstrap-sweetalert/)
+## Accion Eliminar Usuario
 
-## SweetAlert for Bootstrap
-
-![image](https://user-images.githubusercontent.com/59342976/154823868-a572366a-d408-4c8c-b547-5845b46c52ee.png)
-
-Esta libreria esta disponible desde el administrador de paquetes nugget así que simplemente buscaremos ```SweetAlert.Bootstrap``` e instalaremos.
-
-### Correción de errores
-
-![image](https://user-images.githubusercontent.com/59342976/154823952-5b200ff4-8bc2-4a1c-a0d2-ccf69f0f774c.png)
-
-Esta librería trabaja con una versión vieja de bootstrap así que iremos al archivo ```.\CapaPresentacionAdmin\Scripts\sweetalert.min.js``` y cambiaremos el contenido de la propiedad **cancelButtonClass** por **"btn-dark"**
-
-## jQuery LoadingOverlay
-
-![image](https://user-images.githubusercontent.com/59342976/154824028-de79cb00-6dcc-4661-a811-a2e384391102.png)
-
-Esta librería la encontraremos en [este enlace](https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js) la nombraremos ```loadingoverlay.min.js``` lo colocaremos en una carpeta de nombre ```loadingoverlay``` dentro de la carpeta ```Scripts``` de nuestro proyecto ```CapaPresentaciónAdmin``` tal como aparece en la imagen anterior.
-
-## Añadiendo los Bundles de jQuery LoadingOverlay y SweetAlert for Bootstrap
-
-Una de las cosas de las cuales no podemos olvidarnos es de agregar los Bundles/Paquetes a nuestro proyecto ya que esto nos permitirá utilizarlos en todas las paginas de este. Empezemos por los scripts estos serán:
+Con el metodo/accion ```EliminarUsuario``` del controlador ```Home``` se nos posibilitará realizar dicha operación y seguirá la misma logica que hemos aplicado previamente, retornara un json donde el atributo resultado será verdadero si la acción fue realizada con exito de lo contrario será un false y adjuntaremos un mensaje.
 
 ```c#
-"~/Scripts/loadingoverlay/loadingoverlay.min.js",
-"~/Scripts/sweetalert.min.js",
-
-```
-
-Y ahora los estilos.
-
-```c#
-"~/Content/sweetalert.css"
-
-```
-
-Al final este será el resultado de nuestro **BundleConfig**:
-
-```c#
-using System.Web.Optimization;
-
-namespace CapaPresentacionAdmin
+[HttpPost]
+public JsonResult EliminarUsuario(int id)
 {
-    public class BundleConfig
-    {
-        public static void RegisterBundles(BundleCollection bundles)
-        {
-            bundles.Add(new Bundle("~/bundles/jquery").Include(
-                        "~/Scripts/jquery-{version}.js"));
+	bool respuesta = false;
+	string mensaje = string.Empty;
+	
+	respuesta = new CN_Usuarios().Eliminar(id, out mensaje);
+	
+	return Json(new { resultado = respuesta, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+}
+	
+```
 
-            bundles.Add(new Bundle("~/bundles/complementos").Include(
-                      "~/Scripts/fontawesome/all.min.js",
-                      "~/Scripts/DataTables/jquery.dataTables.js",
-                      "~/Scripts/DataTables/dataTables.responsive.js",
-                      "~/Scripts/loadingoverlay/loadingoverlay.min.js",
-                      "~/Scripts/sweetalert.min.js",
-                      "~/Scripts/scripts.js"
-                      ));
+## Script Usuarios
 
-            bundles.Add(new Bundle("~/bundles/bootstrap").Include(
-                      "~/Scripts/bootstrap.bundle.js"));
+Lo primero que tendremos que hacer será agragarle una clase de nombre ```btn-eliminar``` al boton de eliminar, nos quedará algo asi:
 
-            bundles.Add(new StyleBundle("~/Content/css").Include(
-                "~/Content/site.css",
-                "~/Content/DataTables/css/jquery.dataTables.css",
-                "~/Content/DataTables/css/responsive.dataTables.css",
-                "~/Content/sweetalert.css"
-                ));
-        }
-    }
+```html
+<button type="button" class="btn btn-danger btn-sm ms-2 btn-eliminar"><i class="fas fa-trash"></i></button>
+
+```
+
+Lo siguiente será llamar al evento ```onclick``` de cada uno de nuestros botones que tengan la clase ```btn-eliminar``` de la siguiente forma:
+
+```js
+
+$("#tabla tbody").on("click", '.btn-eliminar', function () {});
+
+```
+
+![image](https://user-images.githubusercontent.com/59342976/154889232-3131633f-9cc1-45fe-89a6-7a1750327113.png)
+
+Dentro de está función que será ejecutada cada que vez que demos al boton eliminar tendremos que mostrar un Sweet Alert como el que se ve en la imagen anterior.
+
+```js
+swal({
+	title: "¿Está seguro?",
+	text: "¿Desea eliminar el usuario?",
+	type: "warning",
+	showCancelButton: true,
+	confirmButtonClass: "btn-primary",
+	confirmButtonText: "Si",
+	cancelButtonText: "No",
+	closeOnConfirm: true
+	}, function () {});
+	
+```
+
+En caso de darle al boton de confirmar ("Si") ejecutaremos lo siguiente:
+
+```js
+function () {
+
+    jQuery.ajax({
+        url: '@Url.Action("EliminarUsuario", "Home")',
+        type: "POST",
+        data: JSON.stringify({ id: data.IdUsuario }),
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+
+            if (data.resultado) {
+
+                tabladata.row(usuarioseleccionado).remove().draw();
+            }
+            else {
+
+                swal("No se puedo eliminar el usuario.", data.mensaje, "error");
+            }
+        },
+        error: function (error) {
+            console.log(error);
+        },
+        beforeSend: function () { }
+    });
+
+```
+
+Al final obtendremos algo como esto:
+
+```js
+
+$("#tabla tbody").on("click", '.btn-eliminar', function () {
+
+    var usuarioseleccionado = $(this).closest("tr");
+    var data = tabladata.row(usuarioseleccionado).data();
+
+    swal({
+        title: "¿Está seguro?",
+        text: "¿Desea eliminar el usuario?",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-primary",
+        confirmButtonText: "Si",
+        cancelButtonText: "No",
+        closeOnConfirm: true
+    },
+        function () {
+
+            jQuery.ajax({
+                url: '@Url.Action("EliminarUsuario", "Home")',
+                type: "POST",
+                data: JSON.stringify({ id: data.IdUsuario }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+
+                    if (data.resultado) {
+
+                        tabladata.row(usuarioseleccionado).remove().draw();
+                    }
+                    else {
+
+                        swal("No se puedo eliminar el usuario.", data.mensaje, "error");
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+                beforeSend: function () { }
+            });
+
+        });
+});
+
+```
+
+# Implementación Enviar Correo Electronico
+
+Para enviar correos electronicos necesitaremos de las siguientes referencias y una cuenta de gmail.
+
+```
+using System;
+using System.Net;
+using System.Net.Mail;
+
+```
+
+![image](https://user-images.githubusercontent.com/59342976/154890120-a6dd21e4-f07a-4d5a-896c-93f5389b6a10.png)
+
+Dentro de la configuraciones de Gmail nos dirigiremos a la sección de **seguridad**, activaremos la **verificación en 2 pasos**. Lo segundo que haremos será dirigirnos a **Contraseña de Aplicaciones** nos pedirá iniciar sesión nuevamente y generaremos una contraseña. La función es bastante sencilla y autoexplicativa basicamente es crear un objeto de tipo Mensaje y configurar nuestro cliente smtp el cual es protocolo para enviar mensaje atravez de internet.
+
+```c#
+public static bool EnviarCorreo(string correo, string asunto, string mensaje)
+{
+	bool resultado = false;
+	try
+	{
+		var mail = new MailMessage(from: "stevenwerr@gmail.com", to: correo)
+		{
+			Subject = asunto,
+			Body = mensaje,
+			IsBodyHtml = true
+                };
+		var smtp = new SmtpClient()
+                {
+			Credentials = new NetworkCredential(userName: "stevenwerr@gmail.com", password: "woibjdshycukncma"),
+			Host = "smtp.gmail.com",
+			Port = 587,
+			EnableSsl = true
+                };
+		
+		smtp.Send(mail);
+		resultado = true;
+	}
+	catch
+	{
+		resultado = false;
+	}
+	return resultado;
 }
 
 ```
 
-## Utilizando jQuery LoadingOverlay
+Tambien crearemos una función pare crear una contraseña aleatoria.
 
-![image](https://user-images.githubusercontent.com/59342976/154824208-3eb5ac76-3339-4e57-9edb-fb936992f17a.png)
-
-Dentro de la [Documentación de jQuery LoadingOverlay](https://gasparesganga.com/labs/jquery-loading-overlay/#examples) podemos encontrar ejemplos de scripts que podemos utilizar en nuestro proyecto, es bastante sencillo pero para la ocasión simplemente utilizaremos la siguiente propiedades:
-
-* imageResizeFactor
-* text
-* size
-
-```js
-$(".modal-body").LoadingOverlay("show", {
-	imageResizeFactor: 2,
-	text: "Cargando...",
-	size: 14
-});
-
-$(".modal-body").LoadingOverlay("hide");
+```c#
+public static string GenerarClave()
+{
+	string clave = Guid.NewGuid().ToString("N").Substring(0, 6);
+	return clave;
+}
 
 ```
 
-La colocaremos en la función ```Guardar``` dentro de las propiedades de **jQuery.ajax** ```success```, ```error``` y ```beforeSend``` de esta manera:
+![image](https://user-images.githubusercontent.com/59342976/154889815-55e91424-75e5-4c2d-b947-55925f21df3e.png)
 
-```js
-jQuery.ajax({
-    url: '@Url.Action("GuardarUsuario", "Home")',
-    type: "POST",
-    data: JSON.stringify({ objeto: Usuario }),
-    dataType: "json",
-    contentType: "application/json; charset=utf-8",
-    success: function (data) {
 
-        $(".modal-body").LoadingOverlay("hide");
-        // Usuario Nuevo
-        if (Usuario.IdUsuario == 0) {
-
-            if (data.resultado != 0) {
-                Usuario.IdUsuario = data.resultado;
-                tabladata.row.add(Usuario).draw(false);
-                $("#FormModal").modal("hide");
-            }
-            else {
-                $("#mensajeError").text(data.mensaje);
-                $("#mensajeError").show();
-            }
-        }
-        // Usuario Editar
-        else {
-            if (data.resultado) {
-                tabladata.row(filaSeleccionada).data(Usuario).draw(false);
-                filaSeleccionada = null;
-                $("#FormModal").modal("hide");
-            }
-            else {
-                $("#mensajeError").text(data.mensaje);
-                $("#mensajeError").show();
-            }
-        }
-    },
-    error: function (error) {
-
-        $(".modal-body").LoadingOverlay("hide");
-        $("#mensajeError").text(error.responseText);
-        $("#mensajeError").show();
-    },
-    beforeSend: function () {
-
-        $(".modal-body").LoadingOverlay("show", {
-            imageResizeFactor: 2,
-            text: "Cargando...",
-            size: 14
-        });
-    }
-});
-
-```
-
-El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte12)
+El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte13)
