@@ -1,124 +1,8 @@
-# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 14
+# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 16-17
 
-# Creando Variable de Entorno Para Contraseña del Cliente SMTP
+Ambos Capitulos se basan en realizar exactamente lo mismo que hemos hecho para la entidad Usuarios.
 
-Una de las fallas de seguridad que hemos estado cometiendo anteriormente es "**HardCodear**", en este caso lo hemos hecho como bien dice el titulo con la clave de nuestro cliente SMTP para ello utilizaremos el buscador e ingresaremos a **Editar las variables de entorno del sistema**, luego click en **Variables de entorno...** y luego click en nueva tal como se muestra en la imagen, le agregaremos un nombre para identificarla y tambien un valor que será nuestra clave.
-
-![image](https://user-images.githubusercontent.com/59342976/155039935-7dd961f6-10ad-4a67-82c2-801e14b5121e.png)
-
-Una vez dentro del codigo simplemente la llamaremos de esta manera:
-
-```c#
-var smtp = new SmtpClient()
-{
-	Credentials = new NetworkCredential(userName: Environment.GetEnvironmentVariable("APPLICATION USERNAME CMVC")), password: Environment.GetEnvironmentVariable("APPLICATION PASSWORD CMVC")),
-	Host = "smtp.gmail.com",
-	Port = 587,
-	EnableSsl = true
-};
-
-```
-
-# Creando Procediminetos Almacenados
-
-Crearemos los procedimientos almacenados correspondientes para crear nuestro CRUD de categorias, ya hemos hecho esto así que será mucho mas sencillo.
-
-```sql
-USE DBCARRITO
-GO
-
-CREATE PROCEDURE sp_RegistrarCategoria (
-	@Descripcion VARCHAR(100),
-	@Activo BIT,
-	@Mensaje VARCHAR(500) OUTPUT,
-	@Resultado INT OUTPUT
-	)
-AS
-BEGIN
-	SET @Resultado = 0
-
-	IF NOT EXISTS (
-			SELECT *
-			FROM CATEGORIA
-			WHERE Descripcion = @Descripcion
-			)
-	BEGIN
-		INSERT INTO CATEGORIA (
-			Descripcion,
-			Activo
-			)
-		VALUES (
-			@Descripcion,
-			@Activo
-			)
-
-		SET @Resultado = SCOPE_IDENTITY()
-	END
-	ELSE
-		SET @Mensaje = 'La categoria ya existe.'
-END
-GO
-
-CREATE PROCEDURE sp_EditarCategoria (
-	@IdCategoria INT,
-	@Descripcion VARCHAR(100),
-	@Activo BIT,
-	@Mensaje VARCHAR(500) OUTPUT,
-	@Resultado BIT OUTPUT
-	)
-AS
-BEGIN
-	SET @Resultado = 0
-
-	IF NOT EXISTS (
-			SELECT *
-			FROM CATEGORIA
-			WHERE Descripcion = @Descripcion
-				AND IdCategoria != @IdCategoria
-			)
-	BEGIN
-		UPDATE TOP (1) CATEGORIA
-		SET Descripcion = @Descripcion,
-			Activo = @Activo
-		WHERE IdCategoria = @IdCategoria
-
-		SET @Resultado = 1
-	END
-	ELSE
-		SET @Mensaje = 'La categoria ya existe.'
-END
-GO
-
-CREATE PROCEDURE sp_EliminarCategoria (
-	@IdCategoria INT,
-	@Mensaje VARCHAR(500) OUTPUT,
-	@Resultado BIT OUTPUT
-	)
-AS
-BEGIN
-	SET @Resultado = 0
-
-	IF NOT EXISTS (
-			SELECT *
-			FROM PRODUCTO AS P
-			INNER JOIN CATEGORIA AS C ON C.IdCategoria = P.IdCategoria
-			WHERE P.IdCategoria = @IdCategoria
-			)
-	BEGIN
-		DELETE TOP (1)
-		FROM CATEGORIA
-		WHERE IdCategoria = @IdCategoria
-
-		SET @Resultado = 1
-	END
-	ELSE
-		SET @Mensaje = 'La categoria se encuentra relacionada a un producto.'
-END
-
-
-```
-
-## Capada Datos Categoria
+# CD_Marca.cs
 
 ```c#
 using CapaEntidad;
@@ -132,17 +16,17 @@ using System.Threading.Tasks;
 
 namespace CapaDatos
 {
-    public class CD_Categoria
+    public class CD_Marca
     {
-        public List<Categoria> Listar()
+        public List<Marca> Listar()
         {
-            var lista = new List<Categoria>();
+            var lista = new List<Marca>();
 
             try
             {
                 using (var oconexion = new SqlConnection(Conexion.cn))
                 {
-                    string query = "select IdCategoria, Descripcion, Activo from CATEGORIA";
+                    string query = "select IdMarca, Descripcion, Activo from MARCA";
 
                     var cmd = new SqlCommand()
                     {
@@ -157,9 +41,9 @@ namespace CapaDatos
                     {
                         while (dr.Read())
                         {
-                            lista.Add(new Categoria()
+                            lista.Add(new Marca()
                             {
-                                IdCategoria = Convert.ToInt32(dr["IdCategoria"]),
+                                IdMarca = Convert.ToInt32(dr["IdMarca"]),
                                 Descripcion = dr["Descripcion"].ToString(),
                                 Activo = Convert.ToBoolean(dr["Activo"])
                             });
@@ -173,7 +57,7 @@ namespace CapaDatos
             return lista;
         }
 
-        public int Registrar(Categoria obj, out string Mensaje)
+        public int Registrar(Marca obj, out string Mensaje)
         {
             int idautogenerado = 0;
             Mensaje = string.Empty;
@@ -184,7 +68,7 @@ namespace CapaDatos
                 {
                     var cmd = new SqlCommand()
                     {
-                        CommandText = "sp_RegistrarCategoria",
+                        CommandText = "sp_RegistrarMarca",
                         Connection = oconexion,
                         CommandType = CommandType.StoredProcedure
                     };
@@ -209,7 +93,7 @@ namespace CapaDatos
             return idautogenerado;
         }
 
-        public bool Editar(Categoria obj, out string Mensaje)
+        public bool Editar(Marca obj, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -220,11 +104,11 @@ namespace CapaDatos
                 {
                     var cmd = new SqlCommand()
                     {
-                        CommandText = "sp_EditarCategoria",
+                        CommandText = "sp_EditarMarca ",
                         Connection = oconexion,
                         CommandType = CommandType.StoredProcedure
                     };
-                    cmd.Parameters.AddWithValue("IdCategoria", obj.IdCategoria);
+                    cmd.Parameters.AddWithValue("IdMarca", obj.IdMarca);
                     cmd.Parameters.AddWithValue("Descripcion", obj.Descripcion);
                     cmd.Parameters.AddWithValue("Activo", obj.Activo);
                     cmd.Parameters.Add("Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
@@ -258,11 +142,11 @@ namespace CapaDatos
                 {
                     var cmd = new SqlCommand()
                     {
-                        CommandText = "sp_EliminarCategoria",
+                        CommandText = "sp_EliminarMarca",
                         Connection = oconexion,
                         CommandType = CommandType.StoredProcedure
                     };
-                    cmd.Parameters.AddWithValue("IdCategoria", id);
+                    cmd.Parameters.AddWithValue("IdMarca", id);
                     cmd.Parameters.Add("Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
 
@@ -287,7 +171,7 @@ namespace CapaDatos
 
 ```
 
-## Capa Negocio Categoria 
+# CN_Marca.cs
 
 ```c#
 using CapaDatos;
@@ -300,22 +184,22 @@ using System.Threading.Tasks;
 
 namespace CapaNegocio
 {
-    public class CN_Categoria
+    public class CN_Marca
     {
-        private CD_Categoria objCapaDato = new CD_Categoria();
+        private CD_Marca objCapaDato = new CD_Marca();
 
-        public List<Categoria> Listar()
+        public List<Marca> Listar()
         {
             return objCapaDato.Listar();
         }
 
-        public int Registrar(Categoria obj, out string Mensaje)
+        public int Registrar(Marca obj, out string Mensaje)
         {
             Mensaje = string.Empty;
 
             if (string.IsNullOrEmpty(obj.Descripcion) || string.IsNullOrWhiteSpace(obj.Descripcion))
             {
-                Mensaje = "La descripción de la categoria no puede ser vacio.";
+                Mensaje = "La descripción de la marca no puede ser vacio.";
             }
 
             if (string.IsNullOrEmpty(Mensaje))
@@ -326,13 +210,13 @@ namespace CapaNegocio
             return 0;
         }
 
-        public bool Editar(Categoria obj, out string Mensaje)
+        public bool Editar(Marca obj, out string Mensaje)
         {
             Mensaje = string.Empty;
 
             if (string.IsNullOrEmpty(obj.Descripcion) || string.IsNullOrWhiteSpace(obj.Descripcion))
             {
-                Mensaje = "La descripción de la categoria no puede ser vacio.";
+                Mensaje = "La descripción de la marca no puede ser vacio.";
             }
 
             if (string.IsNullOrEmpty(Mensaje))
@@ -352,52 +236,119 @@ namespace CapaNegocio
 
 ```
 
-## Controlador Mantenedor
-
-Vamos a añadirle al controlador Mantenedor las siguientes Acciones.
+## ManetenedorController
 
 ```c#
-[HttpGet]
-public JsonResult ListarCategorias()
+using CapaEntidad;
+using CapaNegocio;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace CapaPresentacionAdmin.Controllers
 {
-	List<Categoria> oLista = new CN_Categoria().Listar();
-	return Json(new { data = oLista }, JsonRequestBehavior.AllowGet);
+    public class MantenedorController : Controller
+    {
+        // GET: Mantenedor
+        public ActionResult Categoria()
+        {
+            return View();
+        }
+
+        public ActionResult Marca()
+        {
+            return View();
+        }
+
+        public ActionResult Producto()
+        {
+            return View();
+        }
+
+        #region Categoria
+        [HttpGet]
+        public JsonResult ListarCategorias()
+        {
+            List<Categoria> oLista = new CN_Categoria().Listar();
+            return Json(new { data = oLista }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult GuardarCategorias(Categoria objeto)
+        {
+            object resultado;
+            string mensaje = string.Empty;
+
+            if (objeto.IdCategoria == 0)
+            {
+                resultado = new CN_Categoria().Registrar(objeto, out mensaje);
+            }
+            else
+            {
+                resultado = new CN_Categoria().Editar(objeto, out mensaje);
+            }
+
+            return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult EliminarCategoria(int id)
+        {
+            bool respuesta = false;
+            string mensaje = string.Empty;
+
+            respuesta = new CN_Categoria().Eliminar(id, out mensaje);
+
+            return Json(new { resultado = respuesta, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Marca
+        [HttpGet]
+        public JsonResult ListarMarca()
+        {
+            List <Marca> oLista = new CN_Marca().Listar();
+            return Json(new { data = oLista }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult GuardarMarca(Marca objeto)
+        {
+            object resultado;
+            string mensaje = string.Empty;
+
+            if (objeto.IdMarca == 0)
+            {
+                resultado = new CN_Marca().Registrar(objeto, out mensaje);
+            }
+            else
+            {
+                resultado = new CN_Marca().Editar(objeto, out mensaje);
+            }
+
+            return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult EliminarMarca(int id)
+        {
+            bool respuesta = false;
+            string mensaje = string.Empty;
+
+            respuesta = new CN_Marca().Eliminar(id, out mensaje);
+
+            return Json(new { resultado = respuesta, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+    }
 }
 
-[HttpPost]
-public JsonResult GuardarCategorias(Categoria objeto)
-{
-	object resultado;
-	string mensaje = string.Empty;
+``` 
 
-	if (objeto.IdCategoria == 0)
-	{
-		resultado = new CN_Categoria().Registrar(objeto, out mensaje);
-	}
-	else
-	{
-		resultado = new CN_Categoria().Editar(objeto, out mensaje);
-	}
-
-	return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
-}
-
-[HttpPost]
-public JsonResult EliminarCategorias(int id)
-{
-	bool respuesta = false;
-	string mensaje = string.Empty;
-
-	respuesta = new CN_Categoria().Eliminar(id, out mensaje);
-
-	return Json(new { resultado = respuesta, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
-}
-	
-```
-
-## Vista Categoria
-
-Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, modificandola un poco, al final obtenemos lo siguiente:
+# Categoria.cshtml
 
 ```cshtml
 
@@ -487,8 +438,8 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
                     <div class="col-sm-6">
                         <label for="cboactivo" class="form-label">Activo</label>
                         <select id="cboactivo" class="form-select">
+                            <option value="0">No</option>
                             <option value="1">Si</option>
-                            <option value="2">No</option>
                         </select>
                     </div>
 
@@ -527,14 +478,12 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
         responsive: true,
         ordering: false,
         "ajax": {
-            url: '@Url.Action("ListarUsuarios", "Home")',
+            url: '@Url.Action("ListarCategorias", "Mantenedor")',
             type: "GET",
             dataType: "json"
         },
         "columns": [
-            { "data": "Nombres" },
-            { "data": "Apellidos" },
-            { "data": "Correo" },
+            { "data": "Descripcion" },
             {
                 "data": "Activo", "render": function (valor) {
                     if (valor)
@@ -559,18 +508,15 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
     function abrirModal(json) {
 
         $("#txtid").val(0);
-        $("#txtnombres").val("");
-        $("#txtapellidos").val("");
-        $("#txtcorreo").val("");
+        $("#txtdescripcion").val("");
         $("#cboactivo").val(1);
+
         $("#mensajeError").hide();
 
         if (json != null) {
-            $("#txtid").val(json.IdUsuario);
-            $("#txtnombres").val(json.Nombres);
-            $("#txtapellidos").val(json.Apellidos);
-            $("#txtcorreo").val(json.Correo);
-            $("#cboactivo").val(json.Activo == true ? 1 : 2);
+            $("#txtid").val(json.IdCategoria);
+            $("#txtdescripcion").val(json.Descripcion);
+            $("#cboactivo").val(json.Activo ? 1 : 0);
         }
 
         $("#FormModal").modal("show");
@@ -585,12 +531,12 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
 
     $("#tabla tbody").on("click", '.btn-eliminar', function () {
 
-        var usuarioseleccionado = $(this).closest("tr");
-        var data = tabladata.row(usuarioseleccionado).data();
+        var categoriaseleccionada = $(this).closest("tr");
+        var data = tabladata.row(categoriaseleccionada).data();
 
         swal({
             title: "¿Está seguro?",
-            text: "¿Desea eliminar el usuario?",
+            text: "¿Desea eliminar la categoria?",
             type: "warning",
             showCancelButton: true,
             confirmButtonClass: "btn-primary",
@@ -601,20 +547,20 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
             function () {
 
                 jQuery.ajax({
-                    url: '@Url.Action("EliminarUsuario", "Home")',
+                    url: '@Url.Action("EliminarCategoria", "Mantenedor")',
                     type: "POST",
-                    data: JSON.stringify({ id: data.IdUsuario }),
+                    data: JSON.stringify({ id: data.IdCategoria }),
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
                     success: function (data) {
 
                         if (data.resultado) {
 
-                            tabladata.row(usuarioseleccionado).remove().draw();
+                            tabladata.row(categoriaseleccionada).remove().draw();
                         }
                         else {
 
-                            swal("No se puedo eliminar el usuario.", data.mensaje, "error");
+                            swal("No se puedo eliminar la categoria.", data.mensaje, "error");
                         }
                     },
                     error: function (error) {
@@ -628,31 +574,28 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
 
     function Guardar() {
 
-        var Usuario = {
-            Activo: $("#cboactivo").val() == 1 ? true : false,
-            Apellidos: $("#txtapellidos").val(),
-            Correo: $("#txtcorreo").val(),
-            IdUsuario: $("#txtid").val(),
-            Nombres: $("#txtnombres").val(),
-            Reestablecer: true
+        var Categoria = {
+            IdCategoria: $("#txtid").val(),
+            Descripcion: $("#txtdescripcion").val(),
+            Activo: $("#cboactivo").val() == 1 ? true : false
         }
 
         jQuery.ajax({
-            url: '@Url.Action("GuardarUsuario", "Home")',
+            url: '@Url.Action("GuardarCategorias", "Mantenedor")',
             type: "POST",
-            data: JSON.stringify({ objeto: Usuario }),
+            data: JSON.stringify({ objeto: Categoria }),
             dataType: "json",
             contentType: "application/json; charset=utf-8",
             success: function (data) {
 
                 $(".modal-body").LoadingOverlay("hide");
 
-                // Usuario Nuevo
-                if (Usuario.IdUsuario == 0) {
+                // Categoria Nueva
+                if (Categoria.IdCategoria == 0) {
 
                     if (data.resultado != 0) {
-                        Usuario.IdUsuario = data.resultado;
-                        tabladata.row.add(Usuario).draw(false);
+                        Categoria.IdCategoria = data.resultado;
+                        tabladata.row.add(Categoria).draw(false);
                         $("#FormModal").modal("hide");
                     }
                     else {
@@ -660,10 +603,10 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
                         $("#mensajeError").show();
                     }
                 }
-                // Usuario Editar
+                // Categoria Editar
                 else {
                     if (data.resultado) {
-                        tabladata.row(filaSeleccionada).data(Usuario).draw(false);
+                        tabladata.row(filaSeleccionada).data(Categoria).draw(false);
                         filaSeleccionada = null;
                         $("#FormModal").modal("hide");
                     }
@@ -688,12 +631,304 @@ Para la vista simplemente vamos a copiar y pegar lo que hemos hecho en Usuario, 
                 });
             }
         });
-    }
+        }
+
     </script>
 }
 
 ```
 
-![image](https://user-images.githubusercontent.com/59342976/155039207-daff233c-f1b1-432d-b446-d5aec68e4378.png)
+# Marca.cshtml
 
-El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte15)
+```cshtml
+
+@{
+    ViewBag.Title = "Marca";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1 class="mt-4">Categorias</h1>
+
+<ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="@Url.Action("Marca", "Mantenedor")">Mantenimiento</a></li>
+    <li class="breadcrumb-item active">Marca</li>
+</ol>
+
+@*Form Tabla*@
+<div class="card">
+
+    @*Titulo*@
+    <div class="card-header">
+        <i class="fas fa-users me-1"></i> Lista de Marcas
+    </div>
+
+    @*Cuerpo*@
+    <div class="card-body">
+
+        @*Botones*@
+        <div class="row">
+            <div class="col-12">
+                <button type="button" class="btn btn-success" onclick="abrirModal()">Crear Nuevo</button>
+            </div>
+        </div>
+
+        <hr />
+
+        @*Tabla*@
+        <table id="tabla" class="display cell-border" style="width: 100%">
+
+            <thead>
+                <tr>
+                    <th>Descripcion</th>
+                    <th>Activo</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"
+     data-bs-backdrop="static">
+
+    <div class="modal-dialog">
+
+        @*Contenido*@
+        <div class="modal-content">
+
+            @*Cabecera*@
+            <div class="modal-header bg-dark text-white">
+
+                <h5 class="modal-title" id="exampleModalLabel">Marca</h5>
+
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+
+            </div>
+
+            @*Cuerpo*@
+            <div class="modal-body">
+
+                <input id="txtid" type="hidden" value="0" />
+
+                @*Inputs*@
+                <div class="row g-1">
+
+                    <div class="col-sm-6">
+                        <label for="txtdescripcion" class="form-label">Descripcion</label>
+                        <input type="text" class="form-control" id="txtdescripcion" autocomplete="off">
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cboactivo" class="form-label">Activo</label>
+                        <select id="cboactivo" class="form-select">
+                            <option value="0">No</option>
+                            <option value="1">Si</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                @*Mensaje Error*@
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div id="mensajeError" class="alert alert-danger" role="alert">
+                            A simple danger alert—check it out!
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            @*Pie de Modal*@
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section scripts{
+    <script>
+
+    var tabladata;
+    var filaSeleccionada;
+
+    tabladata = $("#tabla").DataTable({
+        responsive: true,
+        ordering: false,
+        "ajax": {
+            url: '@Url.Action("ListarMarca", "Mantenedor")',
+            type: "GET",
+            dataType: "json"
+        },
+        "columns": [
+            { "data": "Descripcion" },
+            {
+                "data": "Activo", "render": function (valor) {
+                    if (valor)
+                        return '<span class="badge bg-success">Si</span>';
+                    else
+                        return '<span class="badge bg-danger">No</span>';
+                }
+            },
+            {
+                "defaultContent": '<button type="button" class="btn btn-primary btn-sm btn-editar"><i class="fas fa-pen"></i></button>' +
+                    '<button type="button" class="btn btn-danger btn-sm ms-2 btn-eliminar"><i class="fas fa-trash"></i></button>',
+                "orderable": false,
+                "searchable": false,
+                "width": "90px"
+            }
+        ],
+        "language": {
+            "url": "https://cdn.datatables.net/plug-ins/1.11.4/i18n/es_es.json"
+        }
+    });
+
+    function abrirModal(json) {
+
+        $("#txtid").val(0);
+        $("#txtdescripcion").val("");
+        $("#cboactivo").val(1);
+
+        $("#mensajeError").hide();
+
+        if (json != null) {
+            $("#txtid").val(json.IdMarca);
+            $("#txtdescripcion").val(json.Descripcion);
+            $("#cboactivo").val(json.Activo ? 1 : 0);
+        }
+
+        $("#FormModal").modal("show");
+    }
+
+    $("#tabla tbody").on("click", '.btn-editar', function () {
+
+        filaSeleccionada = $(this).closest("tr");
+        var data = tabladata.row(filaSeleccionada).data();
+        abrirModal(data)
+    })
+
+    $("#tabla tbody").on("click", '.btn-eliminar', function () {
+
+        var marcaseleccionada = $(this).closest("tr");
+        var data = tabladata.row(marcaseleccionada).data();
+
+        swal({
+            title: "¿Está seguro?",
+            text: "¿Desea eliminar la marca?",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonClass: "btn-primary",
+            confirmButtonText: "Si",
+            cancelButtonText: "No",
+            closeOnConfirm: true
+        },
+            function () {
+
+                jQuery.ajax({
+                    url: '@Url.Action("EliminarMarca", "Mantenedor")',
+                    type: "POST",
+                    data: JSON.stringify({ id: data.IdMarca }),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+
+                        if (data.resultado) {
+
+                            tabladata.row(marcaseleccionada).remove().draw();
+                        }
+                        else {
+
+                            swal("No se puedo eliminar la marca.", data.mensaje, "error");
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    },
+                    beforeSend: function () { }
+                });
+
+            });
+    })
+
+    function Guardar() {
+
+        var Marca = {
+            IdMarca: $("#txtid").val(),
+            Descripcion: $("#txtdescripcion").val(),
+            Activo: $("#cboactivo").val() == 1 ? true : false
+        }
+
+        jQuery.ajax({
+            url: '@Url.Action("GuardarMarca", "Mantenedor")',
+            type: "POST",
+            data: JSON.stringify({ objeto: Marca }),
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+
+                $(".modal-body").LoadingOverlay("hide");
+
+                // Marca Nueva
+                if (Marca.IdMarca == 0) {
+
+                    if (data.resultado != 0) {
+                        Marca.IdMarca = data.resultado;
+                        tabladata.row.add(Marca).draw(false);
+                        $("#FormModal").modal("hide");
+                    }
+                    else {
+                        $("#mensajeError").text(data.mensaje);
+                        $("#mensajeError").show();
+                    }
+                }
+                // Marca Editar
+                else {
+                    if (data.resultado) {
+                        tabladata.row(filaSeleccionada).data(Marca).draw(false);
+                        filaSeleccionada = null;
+                        $("#FormModal").modal("hide");
+                    }
+                    else {
+                        $("#mensajeError").text(data.mensaje);
+                        $("#mensajeError").show();
+                    }
+                }
+            },
+            error: function (error) {
+
+                $(".modal-body").LoadingOverlay("hide");
+                $("#mensajeError").text(error.responseText);
+                $("#mensajeError").show();
+            },
+            beforeSend: function () {
+
+                $(".modal-body").LoadingOverlay("show", {
+                    imageResizeFactor: 2,
+                    text: "Cargando...",
+                    size: 14
+                });
+            }
+        });
+        }
+
+    </script>
+}
+
+```
+
+![image](https://user-images.githubusercontent.com/59342976/155243489-cfb4772e-6b1f-4428-8b05-f77adc075bea.png)
+
+El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte16)
