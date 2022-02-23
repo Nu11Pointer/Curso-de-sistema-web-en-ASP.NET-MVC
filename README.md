@@ -2,6 +2,102 @@
 
 Ambos Capitulos se basan en realizar exactamente lo mismo que hemos hecho para la entidad Usuarios.
 
+# Procedimientos Almacenados
+
+```sql
+USE DBCARRITO
+GO
+
+CREATE PROCEDURE sp_RegistrarMarca (
+	@Descripcion VARCHAR(100),
+	@Activo BIT,
+	@Mensaje VARCHAR(500) OUTPUT,
+	@Resultado INT OUTPUT
+	)
+AS
+BEGIN
+	SET @Resultado = 0
+
+	IF NOT EXISTS (
+			SELECT *
+			FROM MARCA
+			WHERE Descripcion = @Descripcion
+			)
+	BEGIN
+		INSERT INTO MARCA (
+			Descripcion,
+			Activo
+			)
+		VALUES (
+			@Descripcion,
+			@Activo
+			)
+
+		SET @Resultado = SCOPE_IDENTITY()
+	END
+	ELSE
+		SET @Mensaje = 'La marca ya existe'
+END
+GO
+
+CREATE PROCEDURE sp_EditarMarca (
+	@IdMarca INT,
+	@Descripcion VARCHAR(100),
+	@Activo BIT,
+	@Mensaje VARCHAR(500) OUTPUT,
+	@Resultado BIT OUTPUT
+	)
+AS
+BEGIN
+	SET @Resultado = 0
+
+	IF NOT EXISTS (
+			SELECT *
+			FROM MARCA
+			WHERE Descripcion = @Descripcion
+				AND IdMarca != @IdMarca
+			)
+	BEGIN
+		UPDATE TOP (1) MARCA
+		SET Descripcion = @Descripcion,
+			Activo = @Activo
+		WHERE IdMarca = @IdMarca
+
+		SET @Resultado = 1
+	END
+	ELSE
+		SET @Mensaje = 'La marca ya existe'
+END
+GO
+
+CREATE PROCEDURE sp_EliminarMarca (
+	@IdMarca INT,
+	@Mensaje VARCHAR(500) OUTPUT,
+	@Resultado BIT OUTPUT
+	)
+AS
+BEGIN
+	SET @Resultado = 0
+
+	IF NOT EXISTS (
+			SELECT *
+			FROM PRODUCTO AS P
+			INNER JOIN MARCA AS M ON M.IdMarca = P.IdMarca
+			WHERE P.IdMarca = @IdMarca
+			)
+	BEGIN
+		DELETE TOP (1)
+		FROM MARCA
+		WHERE IdMarca = @IdMarca
+
+		SET @Resultado = 1
+	END
+	ELSE
+		SET @Mensaje = 'La marca se encuentra relacionada a un producto.'
+END
+
+```
+
 # CD_Marca.cs
 
 ```c#
