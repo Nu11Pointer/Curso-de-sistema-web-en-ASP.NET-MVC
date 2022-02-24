@@ -1,382 +1,280 @@
-# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 18
+# Curso de sistema web en ASP.NET MVC 5 + SQL Server - Parte 19
 
-# Procedimientos Almacenados Productos
+# Modificación Entidad Productos
 
-```sql
-USE DBCARRITO
-GO
-
-CREATE PROC sp_EliminarProducto(
-	@IdProducto INT,
-	@Mensaje VARCHAR(500) OUTPUT,
-	@Resultado BIT OUTPUT
-	)
-AS
-BEGIN
-	SET @Resultado = 0
-
-	IF NOT EXISTS (
-			SELECT *
-			FROM DETALLE_VENTA AS dv
-			INNER JOIN PRODUCTO AS P ON P.IdProducto = dv.IdProducto
-			WHERE P.IdProducto = @IdProducto
-			)
-	BEGIN
-		DELETE TOP (1)
-		FROM PRODUCTO
-		WHERE IdProducto = @IdProducto
-
-		SET @Resultado = 1
-	END
-	ELSE
-		SET @Mensaje = 'El producto se encuentra relacionado a una venta'
-END
-
-GO
-
-CREATE PROC sp_EditarProducto (
-	@IdProducto INT,
-	@Nombre VARCHAR(100),
-	@Descripcion VARCHAR(100),
-	@IdMarca VARCHAR(100),
-	@IdCategoria VARCHAR(100),
-	@Precio DECIMAL(10, 2),
-	@Stock INT,
-	@Activo BIT,
-	@Mensaje VARCHAR(500) OUTPUT,
-	@Resultado BIT OUTPUT
-	)
-AS
-BEGIN
-	SET @Resultado = 0
-
-	IF NOT EXISTS (
-			SELECT *
-			FROM PRODUCTO
-			WHERE Nombre = @Nombre
-				AND IdProducto != @IdProducto
-			)
-	BEGIN
-		UPDATE PRODUCTO
-		SET Nombre = @Nombre,
-			Descripcion = @Descripcion,
-			IdMarca = @IdMarca,
-			IdCategoria = @IdCategoria,
-			Precio = @Precio,
-			Stock = @Stock,
-			Activo = @Activo
-		WHERE IdProducto = @IdProducto
-
-		SET @Resultado = 1
-	END
-	ELSE
-		SET @Mensaje = 'El producto ya existe'
-END
-
-GO
-
-CREATE PROCEDURE sp_RegistrarProducto (
-	@Nombre VARCHAR(100),
-	@Descripcion VARCHAR(100),
-	@IdMarca VARCHAR(100),
-	@IdCategoria VARCHAR(100),
-	@Precio DECIMAL(10, 2),
-	@Stock INT,
-	@Activo BIT,
-	@Mensaje VARCHAR(500) OUTPUT,
-	@Resultado INT OUTPUT
-	)
-AS
-BEGIN
-	SET @Resultado = 0
-
-	IF NOT EXISTS (
-			SELECT *
-			FROM PRODUCTO
-			WHERE Nombre = @Nombre
-			)
-	BEGIN
-		INSERT INTO PRODUCTO (
-			Nombre,
-			Descripcion,
-			IdMarca,
-			IdCategoria,
-			Precio,
-			Stock,
-			Activo
-			)
-		VALUES (
-			@Nombre,
-			@Descripcion,
-			@IdMarca,
-			@IdCategoria,
-			@Precio,
-			@Stock,
-			@Activo
-			)
-
-		SET @Resultado = SCOPE_IDENTITY()
-	END
-	ELSE
-		SET @Mensaje = 'El producto ya existe'
-END
-
-```
-
-## CD_Productos
+Ha esta entidad le fue añadida tres nuevas propiedades que nos serán de utilidad en nuestro sistema, estas son: ```PrecioTexto```, ```Base64``` y ```Extension```.
 
 ```c#
-using CapaEntidad;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CapaDatos
+namespace CapaEntidad
 {
-    public class CD_Producto
+    public class Producto
     {
+        public int IdProducto { get; set; }
+
+        public string Nombre { get; set; }
+
+        public string Descripcion { get; set; }
+
+        public Marca oMarca { get; set; }
+
+        public Categoria oCategoria { get; set; }
+
+        public decimal Precio { get; set; }
+
+        public string PrecioTexto { get; set; }
+
+        public int Stock { get; set; }
+
+        public string RutaImagen { get; set; }
+
+        public string NombreImagen { get; set; }
+
+        public bool Activo { get; set; }
+
+        public string Base64 { get; set; }
+
+        public string Extension { get; set; }
+    }
+}
+
+```
+
+# Capa Negocio Producto
+
+Tambien se añadio esta clase, es practicamente igual a las demas a excepción del metodo guardar, en este metodo tendremos que realizar una operación extra, la cual depende de dos factore, el primero es si la operación de edición o registro fue realizada con exito, si esto sucede entramos al segundo factor el cual es guardar la imagen del producto si esta fue guardada con exito, el codigo esta comentariado así que puedes darle un vistaso.
+
+```c#
+using CapaDatos;
+using CapaEntidad;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CapaNegocio
+{
+    public class CN_Producto
+    {
+        private CD_Producto objCapaDato = new CD_Producto();
+
         public List<Producto> Listar()
         {
-            var lista = new List<Producto>();
-
-            try
-            {
-                using (var oconexion = new SqlConnection(Conexion.cn))
-                {
-                    var sb = new StringBuilder();
-
-                    sb.AppendLine("SELECT P.IdProducto,");
-                    sb.AppendLine("	p.Nombre,");
-                    sb.AppendLine("	P.Descripcion,");
-                    sb.AppendLine("	M.IdMarca,");
-                    sb.AppendLine("	M.Descripcion [DesMarca],");
-                    sb.AppendLine("	C.IdCategoria,");
-                    sb.AppendLine("	C.Descripcion [DesCategoria],");
-                    sb.AppendLine("	P.Precio,");
-                    sb.AppendLine("	P.Stock,");
-                    sb.AppendLine("	P.RutaImagen,");
-                    sb.AppendLine("	P.NombreImagen,");
-                    sb.AppendLine("	P.Activo");
-                    sb.AppendLine("FROM PRODUCTO AS P");
-                    sb.AppendLine("INNER JOIN MARCA AS M ON M.IdMarca = P.IdMarca");
-                    sb.AppendLine("INNER JOIN CATEGORIA AS C ON C.IdCategoria = P.IdCategoria");
-
-                    var cmd = new SqlCommand()
-                    {
-                        CommandText = sb.ToString(),
-                        Connection = oconexion,
-                        CommandType = CommandType.Text
-                    };
-
-                    oconexion.Open();
-
-                    using (SqlDataReader dr = cmd.ExecuteReader())
-                    {
-                        while (dr.Read())
-                        {
-                            lista.Add(new Producto()
-                            {
-                                IdProducto = Convert.ToInt32(dr["IdProducto"]),
-                                Nombre = dr["Nombre"].ToString(),
-                                Descripcion = dr["Descripcion"].ToString(),
-                                oMarca = new Marca()
-                                {
-                                    IdMarca = Convert.ToInt32(dr["IdMarca"]),
-                                    Descripcion = dr["DesMarca"].ToString()
-                                },
-                                oCategoria = new Categoria()
-                                {
-                                    IdCategoria = Convert.ToInt32(dr["IdCategoria"]),
-                                    Descripcion = dr["DesCategoria"].ToString()
-                                },
-                                Precio = Convert.ToDecimal(dr["Precio"], new CultureInfo("es-NI")),
-                                Stock = Convert.ToInt32(dr["Stock"]),
-                                RutaImagen = dr["RutaImagen"].ToString(),
-                                NombreImagen = dr["NombreImagen"].ToString(),
-                                Activo = Convert.ToBoolean(dr["Activo"])
-                            });
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-            return lista;
+            return objCapaDato.Listar();
         }
 
         public int Registrar(Producto obj, out string Mensaje)
         {
-            int idautogenerado = 0;
             Mensaje = string.Empty;
 
-            try
+            if (string.IsNullOrEmpty(obj.Nombre) || string.IsNullOrWhiteSpace(obj.Nombre))
             {
-                using (var oconexion = new SqlConnection(Conexion.cn))
-                {
-                    var cmd = new SqlCommand()
-                    {
-                        CommandText = "sp_RegistrarProducto",
-                        Connection = oconexion,
-                        CommandType = CommandType.StoredProcedure
-                    };
-                    cmd.Parameters.AddWithValue("Nombre", obj.Nombre);
-                    cmd.Parameters.AddWithValue("Descripcion", obj.Descripcion);
-                    cmd.Parameters.AddWithValue("IdMarca", obj.oMarca.IdMarca);
-                    cmd.Parameters.AddWithValue("IdCategoria", obj.oCategoria.IdCategoria);
-                    cmd.Parameters.AddWithValue("Precio", obj.Precio);
-                    cmd.Parameters.AddWithValue("Stock", obj.Stock);
-                    cmd.Parameters.AddWithValue("Activo", obj.Activo);
-                    cmd.Parameters.Add("Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
-                    cmd.Parameters.Add("Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
-
-                    oconexion.Open();
-
-                    cmd.ExecuteNonQuery();
-
-                    idautogenerado = Convert.ToInt32(cmd.Parameters["Resultado"].Value);
-                    Mensaje = cmd.Parameters["Mensaje"].Value.ToString();
-                }
+                Mensaje = "La nombre del Producto no puede ser vacio.";
             }
-            catch (Exception e)
+            else if (string.IsNullOrEmpty(obj.Descripcion) || string.IsNullOrWhiteSpace(obj.Descripcion))
             {
-                idautogenerado = 0;
-                Mensaje = e.Message;
+                Mensaje = "La descripción del Producto no puede ser vacio.";
             }
-            return idautogenerado;
+            else if (obj.oMarca.IdMarca == 0)
+            {
+                Mensaje = "Debe seleccionar una marca.";
+            }
+            else if (obj.oCategoria.IdCategoria == 0)
+            {
+                Mensaje = "Debe seleccionar una categoria.";
+            }
+            else if (obj.Precio == 0)
+            {
+                Mensaje = "Debe ingresar el precio del producto.";
+            }
+            else if (obj.Stock == 0)
+            {
+                Mensaje = "Debe ingresar el stock del producto.";
+            }
+
+
+            if (string.IsNullOrEmpty(Mensaje))
+            {
+                return objCapaDato.Registrar(obj, out Mensaje);
+            }
+
+            return 0;
         }
 
         public bool Editar(Producto obj, out string Mensaje)
         {
-            bool resultado = false;
             Mensaje = string.Empty;
 
-            try
+            if (string.IsNullOrEmpty(obj.Nombre) || string.IsNullOrWhiteSpace(obj.Nombre))
             {
-                using (var oconexion = new SqlConnection(Conexion.cn))
-                {
-                    var cmd = new SqlCommand()
-                    {
-                        CommandText = "sp_EditarProducto ",
-                        Connection = oconexion,
-                        CommandType = CommandType.StoredProcedure
-                    };
-                    cmd.Parameters.AddWithValue("IdProducto", obj.IdProducto);
-                    cmd.Parameters.AddWithValue("Nombre", obj.Nombre);
-                    cmd.Parameters.AddWithValue("Descripcion", obj.Descripcion);
-                    cmd.Parameters.AddWithValue("IdMarca", obj.oMarca.IdMarca);
-                    cmd.Parameters.AddWithValue("IdCategoria", obj.oCategoria.IdCategoria);
-                    cmd.Parameters.AddWithValue("Precio", obj.Precio);
-                    cmd.Parameters.AddWithValue("Stock", obj.Stock);
-                    cmd.Parameters.AddWithValue("Activo", obj.Activo);
-                    cmd.Parameters.Add("Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
-                    cmd.Parameters.Add("Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
-
-                    oconexion.Open();
-
-                    cmd.ExecuteNonQuery();
-
-                    resultado = Convert.ToBoolean(cmd.Parameters["Resultado"].Value);
-                    Mensaje = cmd.Parameters["Mensaje"].Value.ToString();
-                }
+                Mensaje = "La nombre del Producto no puede ser vacio.";
             }
-            catch (Exception e)
+            else if (string.IsNullOrEmpty(obj.Descripcion) || string.IsNullOrWhiteSpace(obj.Descripcion))
             {
-                resultado = false;
-                Mensaje = e.Message;
+                Mensaje = "La descripción del Producto no puede ser vacio.";
+            }
+            else if (obj.oMarca.IdMarca == 0)
+            {
+                Mensaje = "Debe seleccionar una marca.";
+            }
+            else if (obj.oCategoria.IdCategoria == 0)
+            {
+                Mensaje = "Debe seleccionar una categoria.";
+            }
+            else if (obj.Precio == 0)
+            {
+                Mensaje = "Debe ingresar el precio del producto.";
+            }
+            else if (obj.Stock == 0)
+            {
+                Mensaje = "Debe ingresar el stock del producto.";
             }
 
-            return resultado;
+            if (string.IsNullOrEmpty(Mensaje))
+            {
+                return objCapaDato.Editar(obj, out Mensaje);
+            }
+
+            return false;
         }
 
         public bool GuardarDatosImagen(Producto obj, out string Mensaje)
         {
-            bool resultado = false;
-            Mensaje = string.Empty;
-
-            try
-            {
-                using (var oconexion = new SqlConnection(Conexion.cn))
-                {
-                    string query = "update producto set RutaImagen = @rutaimagen, NombreImagen = @nombreimagen where IdProducto = @idproducto";
-                    var cmd = new SqlCommand()
-                    {
-                        CommandText = query,
-                        Connection = oconexion,
-                        CommandType = CommandType.Text
-                    };
-
-                    cmd.Parameters.AddWithValue("rutaimagen", obj.RutaImagen);
-                    cmd.Parameters.AddWithValue("nombreimagen", obj.NombreImagen);
-                    cmd.Parameters.AddWithValue("idproducto", obj.IdProducto);
-                    cmd.Parameters.Add("Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
-                    cmd.Parameters.Add("Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
-
-                    oconexion.Open();
-
-                    
-
-                    if (cmd.ExecuteNonQuery() > 0)
-                    {
-                        resultado = true;
-                    }
-                    else
-                    {
-                        Mensaje = "No se pudo actualizar imagen";
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                resultado = false;
-                Mensaje = e.Message;
-            }
-            return resultado;
+            return objCapaDato.GuardarDatosImagen(obj, out Mensaje);
         }
 
         public bool Eliminar(int id, out string Mensaje)
         {
-            bool resultado = false;
-            Mensaje = string.Empty;
-
-            try
-            {
-                using (var oconexion = new SqlConnection(Conexion.cn))
-                {
-                    var cmd = new SqlCommand()
-                    {
-                        CommandText = "sp_EliminarProducto",
-                        Connection = oconexion,
-                        CommandType = CommandType.StoredProcedure
-                    };
-                    cmd.Parameters.AddWithValue("IdProducto", id);
-                    cmd.Parameters.Add("Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
-                    cmd.Parameters.Add("Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
-
-                    oconexion.Open();
-
-                    cmd.ExecuteNonQuery();
-
-                    resultado = Convert.ToBoolean(cmd.Parameters["Resultado"].Value);
-                    Mensaje = cmd.Parameters["Mensaje"].Value.ToString();
-                }
-            }
-            catch (Exception e)
-            {
-                resultado = false;
-                Mensaje = e.Message;
-            }
-
-            return resultado;
+            return objCapaDato.Eliminar(id, out Mensaje);
         }
     }
 }
 
 ```
 
-El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte18)
+## Acciones Producto en el Controlador Mantenedor
+
+De igual manera hemos añadido nuevas acciones al controlador.
+
+```c#
+#region Producto
+[HttpGet]
+public JsonResult ListarProducto()
+{
+    List<Producto> oLista = new CN_Producto().Listar();
+    return Json(new { data = oLista }, JsonRequestBehavior.AllowGet);
+}
+
+[HttpPost]
+public JsonResult GuardarProducto(string objeto, HttpPostedFileBase archivoImagen)
+{
+    string mensaje = string.Empty;
+    bool operacion_exitosa = true;
+    bool guardar_imagen_exito = true;
+    Producto oProducto = new Producto();
+
+    // Deserializamos el Objeto Json
+    oProducto = JsonConvert.DeserializeObject<Producto>(objeto);
+
+    decimal precio;
+
+    // Intentamos Transformar el Precio (Como texto) a decimal.
+    if (decimal.TryParse(oProducto.PrecioTexto,
+        NumberStyles.AllowDecimalPoint,
+        new CultureInfo("es-NI"), out precio))
+    {
+        oProducto.Precio = precio;
+    }
+    else
+    {
+        return Json(new { operacionExitosa = false, mensaje = "El formato del precio debe ser ##.##" },
+            JsonRequestBehavior.AllowGet);
+    }
+
+    // ¿Registrar o Editar?
+    if (oProducto.IdProducto == 0)
+    {
+        // Registramos el Producto
+        int idProductoGenerado = new CN_Producto().Registrar(oProducto, out mensaje);
+
+        // Verificamos la operación
+        if (idProductoGenerado != 0)
+        {
+            oProducto.IdProducto = idProductoGenerado;
+        }
+        else
+        {
+            operacion_exitosa = false;
+        }
+    }
+    else
+    {
+        // Editamos el producto
+        operacion_exitosa = new CN_Producto().Editar(oProducto, out mensaje);
+    }
+
+    // Si la operación fue exitosa
+    if (operacion_exitosa)
+    {
+        // ¿Se adjunto una imagen?
+        if (archivoImagen != null)
+        {
+            // Meta-Datos de la imagen.
+            string ruta_guardar = ConfigurationManager.AppSettings["ServidorFotos"];
+            string extension = Path.GetExtension(archivoImagen.FileName);
+            string nombre_imagen = string.Concat(oProducto.IdProducto.ToString(), extension);
+
+            try
+            {
+                // Guardar Imagen
+                archivoImagen.SaveAs(Path.Combine(ruta_guardar, nombre_imagen));
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
+                guardar_imagen_exito = false;
+            }
+
+            // ¿Se realizó con exito?
+            if (guardar_imagen_exito)
+            {
+                oProducto.RutaImagen = ruta_guardar;
+                oProducto.NombreImagen = nombre_imagen;
+                bool rspta = new CN_Producto().GuardarDatosImagen(oProducto, out mensaje);
+            }
+            else
+            {
+                mensaje = "Se guardó el producto pero hubo problemas con la imagen";
+            }
+        }
+    }
+
+    return Json(new
+    {
+        operacion_exitosa = true,
+        idGenerado = oProducto.IdProducto,
+        mensaje = mensaje
+    }, JsonRequestBehavior.AllowGet);
+}
+
+[HttpPost]
+public JsonResult EliminarProducto(int id)
+{
+    bool respuesta = false;
+    string mensaje = string.Empty;
+
+    respuesta = new CN_Producto().Eliminar(id, out mensaje);
+
+    return Json(new { resultado = respuesta, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
+}
+#endregion
+
+```
+
+El proyecto hasta este punto lo puedes encontrar en el siguiente enlace: [Ver Proyecto](https://github.com/Nu11Pointer/CursoMVC/tree/Parte19)
