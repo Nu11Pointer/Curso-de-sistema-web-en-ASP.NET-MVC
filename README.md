@@ -2,6 +2,31 @@
 
 # Reportes en DashBoard
 
+Lo primero lo primero será crear un procedimiento almacenado que nos devuelva los valores que queremos mostrar en el dashboard.
+
+```sql
+USE DBCARRITO
+GO
+
+CREATE PROC sp_ReporteDashboard
+AS
+BEGIN
+	SELECT (
+			SELECT COUNT(*)
+			FROM CLIENTE
+			) [TotalCliente],
+		(
+			SELECT ISNULL(SUM(Cantidad), 0)
+			FROM DETALLE_VENTA
+			) [TotalVenta],
+		(
+			SELECT COUNT(*)
+			FROM PRODUCTO
+			) [TotalProducto]
+END
+
+```
+
 Para esta funcionalidad añadiremos una nueva entidad ```DashBoard```.
 
 ```c#
